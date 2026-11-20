@@ -1,0 +1,82 @@
+[
+	{
+		"scene": "hook",
+		"text": "What if your competitor could read your trading agent's shopping list? With x402 today, they can. Every payment an agent makes is public.",
+		"overlay": {
+			"type": "lower-third",
+			"text": "Every x402 payment is public",
+			"placement": "bottom-center",
+			"motion": "fade-in"
+		}
+	},
+	{
+		"scene": "problem",
+		"text": "Which feed it bought, how often, and when. That is alpha anyone can front-run.",
+		"overlay": {
+			"type": "lower-third",
+			"text": "Paying in the clear leaks the strategy",
+			"placement": "bottom-center",
+			"motion": "fade-in"
+		}
+	},
+	{
+		"scene": "run",
+		"text": "Odds Desk is a research agent that buys Gemini prediction market signals for fractions of a cent, and pays privately. Let's run it.",
+		"overlay": {
+			"type": "lower-third",
+			"text": "Private mode on",
+			"placement": "bottom-center",
+			"motion": "fade-in"
+		}
+	},
+	{
+		"scene": "guardrail",
+		"text": "The whale feed sits on an unvetted origin. The policy runs inside the x402 hook, so it is refused before anything is signed.",
+		"overlay": {
+			"type": "lower-third",
+			"text": "Guardrails inside the x402 SDK hook",
+			"placement": "bottom-center",
+			"motion": "fade-in"
+		}
+	},
+	{
+		"scene": "approve",
+		"text": "A batch of five credits costs one cent. That is above my auto-approve limit, so the agent asks me first.",
+		"overlay": {
+			"type": "lower-third",
+			"text": "Human approval above $0.004",
+			"placement": "bottom-center",
+			"motion": "fade-in"
+		}
+	},
+	{
+		"scene": "blind",
+		"text": "It blinds five serials. Circle Gateway settles one gasless nanopayment on Arc, and the mint signs without ever seeing them. Then three paid requests. No transactions, and the seller only knows: anonymous.",
+		"overlay": {
+			"type": "lower-third",
+			"text": "Blind-signed credits: payer = anonymous",
+			"placement": "bottom-center",
+			"motion": "fade-in"
+		}
+	},
+	{
+		"scene": "call",
+		"text": "Then it makes its call, from a volatility model that beat the naive read by twenty six percent on seven hundred thirty six settled Gemini contracts.",
+		"overlay": {
+			"type": "lower-third",
+			"text": "Backtest: Brier 0.112 vs 0.152 naive",
+			"placement": "bottom-center",
+			"motion": "fade-in"
+		}
+	},
+	{
+		"scene": "close",
+		"text": "Blind credit is a new x402 scheme, built on the official interfaces. Next, we want to upstream it.",
+		"overlay": {
+			"type": "lower-third",
+			"text": "github.com/alexandre-mrt/odds-desk",
+			"placement": "bottom-center",
+			"motion": "fade-in"
+		}
+	}
+]

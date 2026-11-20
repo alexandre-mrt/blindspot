@@ -2,3 +2,7 @@ node_modules
 .env
 audio/*.mp3
 .claude/worktrees/
+demo/node_modules
+demo/videos
+demo/.argo
+demo/test-results
