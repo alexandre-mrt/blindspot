@@ -1,0 +1,19 @@
+{
+  "name": "odds-desk",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.8",
+    "@types/bun": "^1.4.5"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "viem": "^2.58.2"
+  },
+  "scripts": {
+    "start": "bun src/server.ts",
+    "test": "bun test"
+  }
+}
