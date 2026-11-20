@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Odds Desk</title>
+<link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+<header>
+  <div class="brand"><span class="dot"></span> ODDS DESK</div>
+  <div class="tag">An AI agent that pays per request in USDC on Arc for Gemini prediction-market signals</div>
+</header>
+<main>
+  <section class="panel control">
+    <label for="goal">Agent goal</label>
+    <textarea id="goal" rows="2">Find the most mispriced crypto prediction market on Gemini right now and brief me by voice.</textarea>
+    <button id="run" type="button">Run agent</button>
+    <div class="stats">
+      <div><span class="k">Wallet</span><a id="wallet" href="#" target="_blank">-</a></div>
+      <div><span class="k">Balance</span><span id="balance">-</span></div>
+      <div><span class="k">Spent</span><span id="spent">$0.000</span></div>
+      <div><span class="k">Budget</span><span id="budget">-</span></div>
+    </div>
+    <div id="policy" class="policy"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Approvals</h2>
+    <div id="approvals" class="empty">Nothing waiting.</div>
+    <h2>Briefing</h2>
+    <p id="briefing" class="empty">Run the agent to get a voice briefing.</p>
+    <audio id="audio" controls hidden><track kind="captions" /></audio>
+  </section>
+
+  <section class="panel wide">
+    <h2>Decision loop</h2>
+    <ol id="log"></ol>
+  </section>
+</main>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
