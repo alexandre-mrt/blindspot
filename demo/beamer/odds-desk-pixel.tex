@@ -7,9 +7,9 @@
 \usepackage[most]{tcolorbox}
 \graphicspath{{img/}{arc/}}
 
-\setsansfont{VT323}[Path=fonts/, UprightFont=*-Regular, BoldFont=*-Regular, Extension=.ttf, Scale=1.3]
-\setmonofont{VT323}[Path=fonts/, UprightFont=*-Regular, BoldFont=*-Regular, Extension=.ttf, Scale=1.2]
-\newfontfamily\pixel{PressStart2P}[Path=fonts/, UprightFont=*-Regular, BoldFont=*-Regular, Extension=.ttf]
+\setsansfont{DMSans}[Path=fonts/, UprightFont=*-Regular, BoldFont=*-Bold, Extension=.ttf]
+\setmonofont{SpaceMono}[Path=fonts/, UprightFont=*-Regular, BoldFont=*-Bold, Extension=.ttf, Scale=0.88]
+\newfontfamily\pixel{PixelifySans}[Path=fonts/, UprightFont=*-Bold, BoldFont=*-Bold, Extension=.ttf]
 
 \definecolor{navy}{HTML}{1B3158}
 \definecolor{deep}{HTML}{0B0F1A}
@@ -25,7 +25,7 @@
 \setbeamercolor{normal text}{fg=cloud}
 \setbeamercolor{structure}{fg=sand}
 \setbeamercolor{frametitle}{fg=white}
-\setbeamerfont{frametitle}{size=\normalsize}
+\setbeamerfont{frametitle}{size=\LARGE}
 \setbeamertemplate{frametitle}{\vspace{0.45cm}{\pixel\color{sand}\insertframetitle}}
 \setbeamertemplate{itemize item}{\textcolor{gold}{\rule[0.25ex]{0.6ex}{0.6ex}}}
 
@@ -57,7 +57,7 @@
 \begin{frame}
   \vspace{0.6cm}
   \eyebrow{Agentic payments on Arc, with Gemini prediction markets}
-  {\pixel\fontsize{15}{26}\selectfont\color{sand} Your trading agent's\\ wallet is its strategy.\par}
+  {\pixel\fontsize{30}{34}\selectfont\color{sand} Your trading agent's\\ wallet is its strategy.\par}
   \bigskip
   {\large Odds Desk lets AI agents pay per request on Arc\\ without telling anyone what they bought.\par}
   \vfill
@@ -76,10 +76,10 @@
     \begin{column}{0.5\textwidth}
       \eyebrow{What an observer sees (illustration)}
       \begin{term}
-        09:31:02 \ 0xa3da..0e05 \textcolor{gold}{>} feed/edge \ \$0.005\par
-        09:31:04 \ 0xa3da..0e05 \textcolor{gold}{>} feed/arb \ \ \$0.002\par
-        09:31:09 \ 0xa3da..0e05 \textcolor{gold}{>} feed/edge \ \$0.005\par
-        09:31:10 \ \textcolor{sand}{0xa3da..0e05 buys BTC > 59.6k NO}
+        09:31:02 \ 0xa3da \textcolor{gold}{$\rightarrow$} feed/edge \ \$0.005\par
+        09:31:04 \ 0xa3da \textcolor{gold}{$\rightarrow$} feed/arb \ \$0.002\par
+        09:31:09 \ 0xa3da \textcolor{gold}{$\rightarrow$} feed/edge \ \$0.005\par
+        09:31:10 \ \textcolor{sand}{0xa3da buys BTC > 59.6k NO}
       \end{term}
       \vspace{2mm}
       \hfill\sprite[1.2cm]{whale}
@@ -104,7 +104,7 @@
 \begin{frame}
   \centering
   \vfill
-  {\pixel\fontsize{22}{28}\selectfont\color{sand} Live demo\par}
+  {\pixel\fontsize{34}{38}\selectfont\color{sand} Live demo\par}
   \medskip
   {\ttfamily\textcolor{sky}{Arc testnet, live Gemini markets}}
   \vfill
@@ -127,7 +127,7 @@
 \begin{frame}{Is the data worth buying?}
   \begin{columns}[c]
     \begin{column}{0.48\textwidth}
-      {\pixel\fontsize{34}{40}\selectfont\color{sand} 0.112\par}
+      {\pixel\fontsize{48}{52}\selectfont\color{sand} 0.112\par}
       {\ttfamily\textcolor{sky}{Brier score, vs 0.152 reading the spot price}}
       \bigskip
 
@@ -172,7 +172,7 @@
 \begin{frame}
   \vspace{0.8cm}
   \eyebrow{Next}
-  {\pixel\fontsize{17}{26}\selectfont\color{sand} Help us bring\\[2mm] blind-credit into x402.\par}
+  {\pixel\fontsize{28}{34}\selectfont\color{sand} Help us bring\\ blind-credit into x402.\par}
   \bigskip
   {\large We are looking for a Circle Gateway design partner\\ to make the credit purchase private too.\par}
   \vfill
