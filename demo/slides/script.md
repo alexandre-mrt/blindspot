@@ -1,16 +1,16 @@
-Quick show of hands in your head: who remembers Théo, the French whale on Polymarket?
-He bet a fortune on Trump in 2024, and half of crypto Twitter spent the election refreshing his wallet. He ended up splitting his bets across several accounts just to get some privacy.
-Now give that same problem to an AI agent. It can't open four accounts. It has one wallet, and it pays for every API call in public.
+You've all done this. You look up a flight, close the tab, come back the next day, and the price went up. It feels like someone was watching you shop.
+So you open an incognito window and search again.
+AI agents have the same problem, except for them it's not a feeling. Every time they pay for something, it's public.
 ---
-Here's what that looks like. Our agent buys data, one call at a time, a fraction of a cent each.
-Anyone watching can see what it reads and when. Then they see it trade a few seconds later. You don't need to be smart to copy that, you just need to be fast.
+Here's what that looks like. Our agent buys market data, one call at a time, a fraction of a cent each.
+Anyone can see what it reads and when, and then watch it trade a few seconds later. Copying it doesn't take skill, just speed.
 ---
 So we built Blindspot. The agent pays once, one cent, through Circle Gateway on Arc. No gas. That gets it five credits.
 ---
 Then it spends those credits, one per call.
 ---
 And the seller? It knows it got paid. That's all it knows. Not which wallet, not which feed, because every feed costs the same one credit.
-Basically, we gave the agent Théo's four accounts, without the hassle.
+That's the incognito window, for an agent.
 ---
 Let me show you, live on Arc testnet. [CLICK: Run agent]
 First thing, the shady feed gets blocked. The agent never even signs that payment. [PAUSE: approval card]
@@ -28,4 +28,4 @@ Quick sanity check that the data is worth buying: we tested our model on the Gem
 All of this runs on Circle Gateway, x402, Arc and Gemini's prediction market API. The one piece we added is the credit scheme itself.
 ---
 What we want next: get blind-credit into x402 itself, and work with Circle so agents can buy credits straight from their Gateway balance.
-Théo needed four accounts. Your agent just needs Blindspot.
+Next time you open an incognito tab to book a flight, think of your agent. Blindspot is that tab.
