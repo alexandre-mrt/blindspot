@@ -3,59 +3,17 @@ import { type CatalogItem, runAgent } from "./agent/agent";
 import { resolveApproval } from "./agent/approvals";
 import { requireEnv } from "./chain";
 import { SERVER } from "./config";
-import type { Token } from "./credits/blind";
-import { depositRequirements, issue, mintInfo, redeem } from "./credits/mint";
 import { clearHistory, emit, replay, subscribe } from "./events";
-import { arbSignals, edgeSignals, marketSnapshot } from "./signals";
-import {
-	decodeProof,
-	encodeHeader,
-	requirementsFor,
-	verifyPayment,
-} from "./x402";
+import { createPaywalledApp, FEEDS, feedPath } from "./paywall";
 
 const MERCHANT = requireEnv("MERCHANT_ADDRESS");
-const AGENT_KEY = requireEnv("AGENT_PRIVATE_KEY");
+const AGENT_KEY = requireEnv("AGENT_PRIVATE_KEY") as `0x${string}`;
+const UNVETTED_ORIGIN = `http://127.0.0.1:${SERVER.port}`;
+const UNVETTED_FEEDS = new Set(["whale"]);
 const DEFAULT_GOAL =
 	"Find the most mispriced crypto prediction market on Gemini right now and brief me.";
 
-type Feed = {
-	id: string;
-	priceUsd: number;
-	description: string;
-	produce: () => Promise<unknown>;
-};
-
-const FEEDS: Feed[] = [
-	{
-		id: "snapshot",
-		priceUsd: 0.01,
-		description: "Live bid/ask snapshot of every open Gemini prediction market",
-		produce: async () => ({ quotes: await marketSnapshot() }),
-	},
-	{
-		id: "arb",
-		priceUsd: 0.02,
-		description: "Strike-ladder arbitrage scanner on Gemini crypto markets",
-		produce: async () => ({ signals: await arbSignals() }),
-	},
-	{
-		id: "edge",
-		priceUsd: 0.05,
-		description: "Volatility-model fair value vs Gemini odds, ranked by edge",
-		produce: async () => ({ signals: await edgeSignals() }),
-	},
-];
-
-const EXTERNAL_LISTINGS: CatalogItem[] = [
-	{
-		id: "whale-alpha",
-		url: "https://alpha-whales.example/api/insider",
-		priceUsd: 0.5,
-		description: "Unverified 'insider' whale feed",
-		provider: "third-party",
-	},
-];
+const paywalled = createPaywalledApp(MERCHANT, SERVER.publicOrigin);
 
 const json = (body: unknown, init: ResponseInit = {}) =>
 	new Response(JSON.stringify(body), {
@@ -63,118 +21,17 @@ const json = (body: unknown, init: ResponseInit = {}) =>
 		headers: { "content-type": "application/json", ...init.headers },
 	});
 
-const catalog = (): CatalogItem[] => [
-	...FEEDS.map((f) => ({
-		id: f.id,
-		url: `${SERVER.publicOrigin}/api/feeds/${f.id}`,
-		priceUsd: f.priceUsd,
-		description: f.description,
-		provider: "odds-desk",
-	})),
-	...EXTERNAL_LISTINGS,
-];
-
-const CREDIT_OFFER = {
-	scheme: "blind-credit",
-	credits: 1,
-	mint: `${SERVER.publicOrigin}/credits/info`,
-};
-
-function parseCredit(header: string): Token | null {
-	const parsed = JSON.parse(Buffer.from(header, "base64").toString("utf8")) as {
-		scheme?: string;
-		serial?: string;
-		signature?: string;
-	};
-	if (parsed.scheme !== "blind-credit") return null;
-	if (!parsed.serial || !parsed.signature)
-		throw new Error("Malformed credit token");
-	return { serial: parsed.serial, signature: parsed.signature };
-}
-
-async function serveWithCredit(
-	feed: Feed,
-	token: Token,
-	accepts: unknown[],
-): Promise<Response> {
-	try {
-		const tag = redeem(token);
-		emit("merchant_redeemed", {
-			feed: feed.id,
-			serialTag: tag,
-			knowsPayer: false,
-		});
-		return json(await feed.produce());
-	} catch (err) {
-		return json(
-			{ x402Version: 1, error: (err as Error).message, accepts },
-			{ status: 402 },
-		);
-	}
-}
-
-async function issueCredits(req: Request): Promise<Response> {
-	const body = (await req.json().catch(() => ({}))) as { blinded?: string[] };
-	const blinded = body.blinded ?? [];
-	try {
-		const requirements = depositRequirements(blinded.length, MERCHANT);
-		const header = req.headers.get(SERVER.paymentHeader);
-		if (!header)
-			return json(
-				{ x402Version: 1, error: "payment required", accepts: [requirements] },
-				{ status: 402 },
-			);
-		return json({ signatures: await issue(header, blinded, MERCHANT) });
-	} catch (err) {
-		return json({ error: (err as Error).message }, { status: 400 });
-	}
-}
-
-async function servePaidFeed(req: Request, feed: Feed): Promise<Response> {
-	const requirements = requirementsFor(
-		new URL(req.url).pathname,
-		feed.priceUsd,
-		MERCHANT,
-		feed.description,
-	);
-	const accepts = [requirements, CREDIT_OFFER];
-	const header = req.headers.get(SERVER.paymentHeader);
-	if (!header)
-		return json(
-			{ x402Version: 1, error: "payment required", accepts },
-			{ status: 402 },
-		);
-	const credit = parseCredit(header);
-	if (credit) return serveWithCredit(feed, credit, accepts);
-	try {
-		const proof = decodeProof(header);
-		await verifyPayment(proof, requirements);
-		emit("merchant_settled", {
-			feed: feed.id,
-			txHash: proof.txHash,
-			payer: proof.payer,
-		});
-		return json(await feed.produce(), {
-			headers: {
-				[SERVER.paymentResponseHeader]: encodeHeader({
-					success: true,
-					txHash: proof.txHash,
-				}),
-			},
-		});
-	} catch (err) {
-		return json(
-			{
-				x402Version: 1,
-				error: (err as Error).message,
-				accepts: [requirements],
-			},
-			{ status: 402 },
-		);
-	}
-}
-
-let running = false;
+const catalog = (): CatalogItem[] =>
+	FEEDS.map((f) => {
+		const unvetted = UNVETTED_FEEDS.has(f.id);
+		return {
+			id: f.id,
+			url: `${unvetted ? UNVETTED_ORIGIN : SERVER.publicOrigin}${feedPath(f.id)}`,
+			priceUsd: Number(f.price.replace("$", "")),
+			description: f.description,
+			provider: unvetted ? "third-party" : "odds-desk",
+		};
+	});
 
 function sseStream(): Response {
 	const encoder = new TextEncoder();
@@ -198,44 +55,37 @@ function sseStream(): Response {
 	});
 }
 
+let running = false;
+
+async function startRun(req: Request): Promise<Response> {
+	if (running) return json({ error: "agent already running" }, { status: 409 });
+	const body = (await req.json().catch(() => ({}))) as {
+		goal?: string;
+		privateMode?: boolean;
+	};
+	running = true;
+	clearHistory();
+	runAgent({
+		privateKey: AGENT_KEY,
+		catalogUrl: `${SERVER.publicOrigin}/catalog`,
+		goal: body.goal?.trim() || DEFAULT_GOAL,
+		privateMode: body.privateMode !== false,
+	})
+		.catch((err: Error) => emit("error", { error: err.message }))
+		.finally(() => {
+			running = false;
+		});
+	return json({ started: true });
+}
+
 Bun.serve({
 	port: SERVER.port,
 	idleTimeout: 0,
 	routes: {
 		"/": dashboard,
 		"/catalog": () => json(catalog()),
-		"/api/feeds/:id": (req) => {
-			const feed = FEEDS.find((f) => f.id === req.params.id);
-			return feed
-				? servePaidFeed(req, feed)
-				: json({ error: "unknown feed" }, { status: 404 });
-		},
 		"/events": () => sseStream(),
-		"/credits/info": () => json(mintInfo(MERCHANT)),
-		"/credits/issue": { POST: issueCredits },
-		"/agent/run": {
-			POST: async (req) => {
-				if (running)
-					return json({ error: "agent already running" }, { status: 409 });
-				const body = (await req.json().catch(() => ({}))) as {
-					goal?: string;
-					privateMode?: boolean;
-				};
-				running = true;
-				clearHistory();
-				runAgent({
-					privateKey: AGENT_KEY,
-					catalogUrl: `${SERVER.publicOrigin}/catalog`,
-					goal: body.goal?.trim() || DEFAULT_GOAL,
-					privateMode: body.privateMode !== false,
-				})
-					.catch((err: Error) => emit("error", { error: err.message }))
-					.finally(() => {
-						running = false;
-					});
-				return json({ started: true });
-			},
-		},
+		"/agent/run": { POST: startRun },
 		"/agent/approve": {
 			POST: async (req) => {
 				const body = (await req.json()) as { id?: string; approved?: boolean };
@@ -244,6 +94,7 @@ Bun.serve({
 			},
 		},
 	},
+	fetch: paywalled.fetch,
 });
 
 console.log(`Odds Desk on ${SERVER.publicOrigin}`);

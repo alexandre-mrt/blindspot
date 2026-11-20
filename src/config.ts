@@ -5,6 +5,7 @@ export const ARC = {
 	usdc: "0x3600000000000000000000000000000000000000",
 	usdcDecimals: 6,
 	network: "arc-testnet",
+	caip2: "eip155:5042002",
 } as const;
 
 export const GEMINI = {
@@ -23,9 +24,9 @@ export const SERVER = {
 } as const;
 
 export const POLICY = {
-	sessionBudgetUsd: 0.2,
-	perCallMaxUsd: 0.1,
-	approvalThresholdUsd: 0.04,
+	sessionBudgetUsd: 0.05,
+	perCallMaxUsd: 0.01,
+	approvalThresholdUsd: 0.004,
 	approvalTimeoutMs: 60_000,
 	allowedOrigins: [SERVER.publicOrigin],
 } as const;
