@@ -1,11 +1,4 @@
 import { createHash } from "node:crypto";
-import { emit } from "../events";
-import {
-	decodeProof,
-	type PaymentRequirements,
-	requirementsFor,
-	verifyPayment,
-} from "../x402";
 import {
 	bigToHex,
 	generateKeyPair,
@@ -15,63 +8,39 @@ import {
 	verify,
 } from "./blind";
 
-export const CREDIT = { priceUsd: 0.02, maxBatch: 20 } as const;
+export const CREDIT_BATCH = { size: 5, price: "$0.01" } as const;
 
-const keyPair = generateKeyPair();
-const spent = new Set<string>();
+export type Mint = ReturnType<typeof createMint>;
 
-export const mintInfo = (payTo: string) => ({
-	scheme: "blind-credit",
-	n: bigToHex(keyPair.n),
-	e: bigToHex(keyPair.e),
-	priceUsdPerCredit: CREDIT.priceUsd,
-	maxBatch: CREDIT.maxBatch,
-	payTo,
-});
+export function createMint() {
+	const keyPair = generateKeyPair();
+	const spent = new Set<string>();
 
-export function depositRequirements(
-	count: number,
-	payTo: string,
-): PaymentRequirements {
-	if (!Number.isInteger(count) || count < 1 || count > CREDIT.maxBatch) {
-		throw new Error(`Credit batch must be 1..${CREDIT.maxBatch}`);
+	const publicKey = () => ({ n: bigToHex(keyPair.n), e: bigToHex(keyPair.e) });
+
+	function signBatch(blindedHex: unknown): string[] {
+		if (!Array.isArray(blindedHex) || blindedHex.length !== CREDIT_BATCH.size) {
+			throw new Error(`Expected exactly ${CREDIT_BATCH.size} blinded values`);
+		}
+		return blindedHex.map((h) =>
+			bigToHex(signBlinded(hexToBig(String(h)), keyPair)),
+		);
 	}
-	return requirementsFor(
-		"/credits/issue",
-		Number((count * CREDIT.priceUsd).toFixed(6)),
-		payTo,
-		`${count} blind credits`,
-	);
-}
 
-export async function issue(
-	paymentHeader: string,
-	blindedHex: string[],
-	payTo: string,
-): Promise<string[]> {
-	const requirements = depositRequirements(blindedHex.length, payTo);
-	const proof = decodeProof(paymentHeader);
-	await verifyPayment(proof, requirements);
-	const signatures = blindedHex.map((h) =>
-		bigToHex(signBlinded(hexToBig(h), keyPair)),
-	);
-	emit("mint_signed", {
-		count: signatures.length,
-		txHash: proof.txHash,
-		sawSerials: false,
-	});
-	return signatures;
-}
+	function check(token: Token): string | null {
+		if (!/^[0-9a-f]{64}$/.test(token.serial)) return "malformed_serial";
+		if (spent.has(token.serial)) return "credit_already_spent";
+		if (!verify(token.serial, hexToBig(token.signature), keyPair))
+			return "invalid_credit_signature";
+		return null;
+	}
 
-const serialTag = (serial: string) =>
-	createHash("sha256").update(serial).digest("hex").slice(0, 12);
+	function redeem(token: Token): string {
+		const reason = check(token);
+		if (reason) throw new Error(reason);
+		spent.add(token.serial);
+		return createHash("sha256").update(token.serial).digest("hex").slice(0, 12);
+	}
 
-export function redeem(token: Token): string {
-	if (!/^[0-9a-f]{64}$/.test(token.serial))
-		throw new Error("Malformed credit serial");
-	if (spent.has(token.serial)) throw new Error("Credit already spent");
-	if (!verify(token.serial, hexToBig(token.signature), keyPair))
-		throw new Error("Invalid credit signature");
-	spent.add(token.serial);
-	return serialTag(token.serial);
+	return { publicKey, signBatch, check, redeem };
 }
