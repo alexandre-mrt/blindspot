@@ -1,7 +1,6 @@
 import { txUrl } from "../chain";
 import { emit } from "../events";
 import type { ArbSignal, EdgeSignal } from "../signals";
-import { synthesize } from "../voice";
 import { requestApproval } from "./approvals";
 import { complete } from "./llm";
 import { createPayer } from "./pay-client";
@@ -109,7 +108,6 @@ export async function runAgent(opts: {
 	privateKey: string;
 	catalogUrl: string;
 	goal: string;
-	audioPath: string;
 }) {
 	const payer = createPayer(opts.privateKey);
 	emit("start", {
@@ -140,15 +138,8 @@ export async function runAgent(opts: {
 		`Decision: ${JSON.stringify(decision)}. Research spend: $${spentUsd.toFixed(3)} USDC on Arc.`,
 	).catch(() => null);
 	const briefing = llmBriefing ?? templateBriefing(decision, spentUsd);
-	const voiced = await synthesize(briefing, opts.audioPath).catch(
-		(err: Error) => {
-			emit("voice_failed", { error: err.message });
-			return false;
-		},
-	);
 	emit("briefing", {
 		text: briefing,
-		audio: voiced,
 		spentUsd,
 		balanceUsd: await payer.balanceUsd(),
 	});

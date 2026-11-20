@@ -7,7 +7,6 @@ const TONE = {
 	approval_required: "warn",
 	payment_required: "warn",
 	purchase_failed: "err",
-	voice_failed: "err",
 	error: "err",
 	approval_timeout: "err",
 };
@@ -46,7 +45,7 @@ function summarize(e) {
 		case "decision":
 			return describeDecision(e.decision);
 		case "briefing":
-			return `briefing ready${e.audio ? " (ElevenLabs voice)" : ""}`;
+			return "briefing ready";
 		case "approval_decision":
 			return e.approved ? "human approved" : "human rejected";
 		default:
@@ -121,12 +120,7 @@ function handle(e) {
 		$("briefing").classList.remove("empty");
 		$("briefing").textContent = e.text;
 		$("balance").textContent = usd(e.balanceUsd);
-		if (e.audio) {
-			const audio = $("audio");
-			audio.src = `/audio/briefing.mp3?t=${Date.now()}`;
-			audio.hidden = false;
-			audio.play().catch(() => {});
-		} else if ("speechSynthesis" in window) {
+		if ("speechSynthesis" in window) {
 			speechSynthesis.speak(new SpeechSynthesisUtterance(e.text));
 		}
 	}

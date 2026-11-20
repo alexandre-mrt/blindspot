@@ -35,8 +35,3 @@ export const SIGNAL = {
 	maxEvents: 40,
 	minutesPerYear: 525_600,
 } as const;
-
-export const VOICE = {
-	voiceId: process.env.ELEVENLABS_VOICE_ID ?? "JBFqnCBsd6RMkjVDRZzb",
-	modelId: "eleven_flash_v2_5",
-} as const;

@@ -14,9 +14,8 @@ import {
 
 const MERCHANT = requireEnv("MERCHANT_ADDRESS");
 const AGENT_KEY = requireEnv("AGENT_PRIVATE_KEY");
-const AUDIO_PATH = "audio/briefing.mp3";
 const DEFAULT_GOAL =
-	"Find the most mispriced crypto prediction market on Gemini right now and brief me by voice.";
+	"Find the most mispriced crypto prediction market on Gemini right now and brief me.";
 
 type Feed = {
 	id: string;
@@ -151,7 +150,6 @@ Bun.serve({
 				: json({ error: "unknown feed" }, { status: 404 });
 		},
 		"/events": () => sseStream(),
-		"/audio/briefing.mp3": () => new Response(Bun.file(AUDIO_PATH)),
 		"/agent/run": {
 			POST: async (req) => {
 				if (running)
@@ -163,7 +161,6 @@ Bun.serve({
 					privateKey: AGENT_KEY,
 					catalogUrl: `${SERVER.publicOrigin}/catalog`,
 					goal: body.goal?.trim() || DEFAULT_GOAL,
-					audioPath: AUDIO_PATH,
 				})
 					.catch((err: Error) => emit("error", { error: err.message }))
 					.finally(() => {
