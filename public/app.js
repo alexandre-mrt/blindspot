@@ -1,4 +1,8 @@
+import { createChart } from "./chart.js";
+import { glow, initStage, midpoint, pop, send } from "./stage.js";
+
 const EXPLORER = "https://testnet.arcscan.app";
+const TYPE_MS = 7;
 const TONE = {
 	payment_settled: "ok",
 	merchant_settled: "ok",
@@ -17,6 +21,19 @@ const TONE = {
 
 const $ = (id) => document.getElementById(id);
 const usd = (n) => `$${Number(n).toFixed(3)}`;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+for (const layer of ["far", "near"]) {
+	const img = document.createElement("img");
+	img.className = `city ${layer}`;
+	img.alt = "";
+	img.src = `/sprites/city-${layer}.png`;
+	img.onerror = () => img.remove();
+	$("sky").prepend(img);
+}
+
+initStage($("stage"));
+const chart = createChart($("chart"));
 
 function link(url, text) {
 	const a = document.createElement("a");
@@ -66,7 +83,6 @@ function summarize(e) {
 			return e.error ?? e.reason ?? "";
 	}
 }
-
 function describeDecision(d) {
 	if (d.kind === "hold") return "HOLD: nothing clears the edge threshold";
 	if (d.kind === "arb")
@@ -74,17 +90,6 @@ function describeDecision(d) {
 	const s = d.signal;
 	return `${s.side} ${s.contract} (${s.event}) market ${(s.mid * 100).toFixed(0)}% vs model ${(s.modelProb * 100).toFixed(0)}%, stake $${d.stakeUsd}`;
 }
-
-function appendLog(e) {
-	const li = document.createElement("li");
-	li.innerHTML = `<span class="t">${e.at.slice(11, 19)}</span><span class="ev ${TONE[e.type] ?? ""}">${e.type}</span>`;
-	li.append(document.createTextNode(summarize(e)));
-	const tx = e.url ?? (e.txHash ? `${EXPLORER}/tx/${e.txHash}` : null);
-	if (tx && e.txHash) li.append(" ", link(tx, "arcscan ↗"));
-	$("log").append(li);
-	$("log").scrollTop = $("log").scrollHeight;
-}
-
 function showApproval(e) {
 	const box = $("approvals");
 	if (box.classList.contains("empty")) {
@@ -116,14 +121,97 @@ function showApproval(e) {
 	box.append(card);
 }
 
-function handle(e) {
-	appendLog(e);
+async function typeLine(e) {
+	const li = document.createElement("li");
+	li.innerHTML = `<span class="t">${e.at.slice(11, 19)}</span><span class="ev ${TONE[e.type] ?? ""}">${e.type}</span>`;
+	const text = document.createTextNode("");
+	const cursor = document.createElement("span");
+	cursor.className = "cursor";
+	li.append(text, cursor);
+	$("log").append(li);
+	const full = summarize(e);
+	const step = queue.length > 1 ? 12 : 3;
+	for (let i = 1; i <= full.length; i += step) {
+		text.data = full.slice(0, i);
+		$("log").scrollTop = $("log").scrollHeight;
+		await sleep(TYPE_MS);
+	}
+	text.data = full;
+	cursor.remove();
+	if (e.url && e.txHash) li.append(" ", link(e.url, "arcscan ↗"));
+	$("log").scrollTop = $("log").scrollHeight;
+}
+
+function animate(e) {
+	switch (e.type) {
+		case "start":
+			glow("agent");
+			break;
+		case "gateway_balance":
+			glow("gateway");
+			break;
+		case "catalog":
+			send("merchant-agent", "data", { tone: "gold" });
+			break;
+		case "policy":
+			if (e.verdict === "deny") {
+				send("agent-whale", "request", { tone: "red", stopAt: 0.55 });
+				setTimeout(() => pop("denied", midpoint("agent", "whale", 0.55)), 600);
+				glow("whale", "lit-red", 2200);
+				chart.bump("denied");
+			}
+			if (e.verdict === "needs_approval") glow("human", "lit", 2400);
+			break;
+		case "approval_decision":
+			if (e.approved) {
+				pop("approved", "human");
+				send("human-agent", "data", { tone: "gold" });
+			} else pop("denied", "human");
+			break;
+		case "payment_signed":
+			send("agent-gateway", "coin", { tone: "gold" });
+			setTimeout(() => pop("gasless", "gateway"), 900);
+			break;
+		case "payment_settled":
+			send("gateway-merchant", "coin", { tone: "gold" });
+			glow("merchant");
+			chart.bump("public");
+			break;
+		case "credits_blinded":
+			for (let i = 0; i < 3; i++)
+				send("agent-mint", "blinded", { tone: "violet", delay: i * 250 });
+			glow("mint", "lit-violet", 2400);
+			break;
+		case "mint_signed":
+			for (let i = 0; i < 3; i++)
+				send("mint-agent", "credit", { tone: "violet", delay: 600 + i * 250 });
+			break;
+		case "merchant_redeemed":
+			send("agent-merchant", "credit", { tone: "violet" }).then(() => {
+				pop("anonymous", "merchant");
+				glow("merchant", "lit-violet");
+			});
+			chart.bump("private");
+			break;
+		case "decision":
+			send("oracle-merchant", "data", { tone: "gold" });
+			send("merchant-agent", "data", { tone: "gold", delay: 700 });
+			glow("oracle");
+			break;
+		case "briefing":
+			glow("agent", "lit", 3000);
+			break;
+		default:
+			break;
+	}
+}
+
+function updateState(e) {
 	if (e.type === "start") {
 		$("wallet").textContent = e.agent;
 		$("wallet").href = `${EXPLORER}/address/${e.agent}`;
-		$("budget").textContent = usd(e.policy.sessionBudgetUsd);
 		$("policy").textContent =
-			`Guardrails (x402 onBeforePaymentCreation hook): per-call cap ${usd(e.policy.perCallMaxUsd)}, human approval above ${usd(e.policy.approvalThresholdUsd)}, allowlist ${e.policy.allowedOrigins.join(", ")}`;
+			`Guardrails in the x402 hook: cap ${usd(e.policy.perCallMaxUsd)}/call, human approval above ${usd(e.policy.approvalThresholdUsd)}, budget ${usd(e.policy.sessionBudgetUsd)}`;
 	}
 	if (e.type === "gateway_balance")
 		$("balance").textContent = usd(e.availableUsd);
@@ -134,26 +222,51 @@ function handle(e) {
 	if (e.type === "credit_spent")
 		$("offchain").textContent = String(Number($("offchain").textContent) + 1);
 	if (e.type === "approval_required") showApproval(e);
-	if (e.type === "approval_decision" || e.type === "approval_timeout")
-		$(`ap-${e.id}`)?.remove();
+	if (e.type === "approval_decision" || e.type === "approval_timeout") {
+		$("approvals").className = "empty";
+		$("approvals").textContent = e.approved ? "Approved by you." : "Rejected.";
+	}
 	if (e.type === "briefing") {
 		$("briefing").classList.remove("empty");
 		$("briefing").textContent = e.text;
-		if ("speechSynthesis" in window) {
-			speechSynthesis.speak(new SpeechSynthesisUtterance(e.text));
-		}
+		if (window.speechSynthesis)
+			window.speechSynthesis.speak(new SpeechSynthesisUtterance(e.text));
 	}
 	if (e.type === "done" || e.type === "error") $("run").disabled = false;
+}
+
+const queue = [];
+let draining = false;
+
+async function drain() {
+	if (draining) return;
+	draining = true;
+	while (queue.length > 0) {
+		const e = queue.shift();
+		animate(e);
+		await typeLine(e);
+	}
+	draining = false;
+}
+
+function handle(e) {
+	updateState(e);
+	queue.push(e);
+	drain();
 }
 
 $("run").onclick = async () => {
 	$("run").disabled = true;
 	$("log").textContent = "";
+	queue.length = 0;
+	chart.reset();
 	$("onchain").textContent = "0";
 	$("offchain").textContent = "0";
 	$("spent").textContent = "$0.000";
 	$("approvals").className = "empty";
-	$("approvals").textContent = "Nothing waiting.";
+	$("approvals").textContent = "No approval pending.";
+	$("briefing").className = "empty";
+	$("briefing").textContent = "Thinking…";
 	const res = await fetch("/agent/run", {
 		method: "POST",
 		body: JSON.stringify({

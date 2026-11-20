@@ -55,6 +55,17 @@ function sseStream(): Response {
 	});
 }
 
+const SPRITE_NAME = /^[a-z0-9-]{1,40}\.png$/;
+
+async function serveSprite(name: string): Promise<Response> {
+	if (!SPRITE_NAME.test(name))
+		return new Response("not found", { status: 404 });
+	const file = Bun.file(`public/sprites/${name}`);
+	return (await file.exists())
+		? new Response(file, { headers: { "cache-control": "no-cache" } })
+		: new Response("not found", { status: 404 });
+}
+
 let running = false;
 
 async function startRun(req: Request): Promise<Response> {
@@ -85,6 +96,7 @@ Bun.serve({
 		"/": dashboard,
 		"/catalog": () => json(catalog()),
 		"/events": () => sseStream(),
+		"/sprites/:name": (req) => serveSprite(req.params.name),
 		"/agent/run": { POST: startRun },
 		"/agent/approve": {
 			POST: async (req) => {

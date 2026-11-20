@@ -4,41 +4,58 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Odds Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" />
 <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
+<div id="sky" class="sky" aria-hidden="true">
+  <div class="rain"></div>
+</div>
 <header>
-  <div class="brand"><span class="dot"></span> ODDS DESK</div>
-  <div class="tag">An AI agent paying per request with x402 + Circle Gateway nanopayments on Arc, privately, for Gemini prediction-market signals</div>
+  <h1 class="sign">ODDS<span>·</span>DESK</h1>
+  <p class="tag">An AI agent that buys Gemini signals per request over x402 + Circle Gateway on Arc, and pays with blind-signed credits nobody can trace.</p>
 </header>
 <main>
-  <section class="panel control">
-    <label for="goal">Agent goal</label>
-    <textarea id="goal" rows="2">Find the most mispriced crypto prediction market on Gemini right now and brief me.</textarea>
-    <label class="toggle"><input id="private" type="checkbox" checked /> Private mode: blind-signed credits (Chaumian e-cash)</label>
-    <button id="run" type="button">Run agent</button>
-    <div class="stats">
-      <div><span class="k">Wallet</span><a id="wallet" href="https://testnet.arcscan.app" target="_blank">-</a></div>
-      <div><span class="k">Gateway balance</span><span id="balance">-</span></div>
-      <div><span class="k">Spent</span><span id="spent">$0.000</span></div>
-      <div><span class="k">Budget</span><span id="budget">-</span></div>
-      <div><span class="k">Gasless nanopayments</span><span id="onchain">0</span></div>
-      <div><span class="k">Blind-credit payments</span><span id="offchain">0</span></div>
-    </div>
-    <div id="policy" class="policy"></div>
-  </section>
-
-  <section class="panel">
-    <h2>Approvals</h2>
-    <div id="approvals" class="empty">Nothing waiting.</div>
-    <h2>Briefing</h2>
-    <p id="briefing" class="empty">Run the agent to get a spoken briefing.</p>
-  </section>
-
-  <section class="panel wide">
-    <h2>Decision loop</h2>
+  <section class="term" aria-label="Agent terminal">
+    <div class="term-bar"><span></span><span></span><span></span><b>agent@odds-desk ~ x402</b></div>
     <ol id="log"></ol>
   </section>
+
+  <section class="stage-wrap" aria-label="Payment flow">
+    <div id="stage" class="stage"></div>
+    <div class="legend">
+      <span class="lg gold">public · Gateway nanopayment</span>
+      <span class="lg violet">private · blind credit</span>
+      <span class="lg red">denied by guardrail</span>
+    </div>
+  </section>
+
+  <aside class="side">
+    <div class="controls">
+      <label class="toggle"><input id="private" type="checkbox" checked /> PRIVATE MODE</label>
+      <textarea id="goal" rows="2" aria-label="Agent goal">Find the most mispriced crypto prediction market on Gemini right now and brief me.</textarea>
+      <button id="run" type="button">▶ RUN AGENT</button>
+    </div>
+    <div class="tiles">
+      <div class="tile"><span class="k">GATEWAY BAL</span><span id="balance" class="v">-</span></div>
+      <div class="tile"><span class="k">SPENT</span><span id="spent" class="v">$0.000</span></div>
+      <div class="tile gold"><span class="k">NANOPAYMENTS</span><span id="onchain" class="v">0</span></div>
+      <div class="tile violet"><span class="k">BLIND CREDITS</span><span id="offchain" class="v">0</span></div>
+    </div>
+    <div class="chart-card">
+      <p class="k">WHO KNOWS WHAT YOU BOUGHT</p>
+      <svg id="chart" viewBox="0 0 300 120" role="img" aria-label="Requests by payment type"></svg>
+    </div>
+    <div id="approvals" class="empty">No approval pending.</div>
+    <div class="brief-card">
+      <p class="k">AGENT CALL</p>
+      <p id="briefing" class="empty">Run the agent.</p>
+    </div>
+    <a id="wallet" class="wallet" href="https://testnet.arcscan.app" target="_blank">-</a>
+    <p id="policy" class="policy"></p>
+    <p id="budget" hidden></p>
+  </aside>
 </main>
 <script type="module" src="./app.js"></script>
 </body>
