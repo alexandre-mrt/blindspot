@@ -2,6 +2,7 @@ import { txUrl } from "../chain";
 import { emit } from "../events";
 import type { ArbSignal, EdgeSignal } from "../signals";
 import { requestApproval } from "./approvals";
+import { createCreditWallet } from "./credit-wallet";
 import { complete } from "./llm";
 import { createPayer } from "./pay-client";
 import { defaultPolicy, evaluate } from "./policy";
@@ -104,16 +105,56 @@ async function buyFeeds(
 	return { bought, spentUsd };
 }
 
+async function buyFeedsPrivately(
+	payer: ReturnType<typeof createPayer>,
+	items: CatalogItem[],
+	origin: string,
+) {
+	const credits = createCreditWallet(origin);
+	await credits.load();
+	const creditUsd = credits.priceUsd();
+	const eligible = items.filter((item) => {
+		const decision = evaluate(defaultPolicy, item.url, item.priceUsd, 0);
+		emit("policy", { id: item.id, priceUsd: item.priceUsd, ...decision });
+		return decision.verdict !== "deny";
+	});
+	const bought: Record<string, unknown> = {};
+	if (eligible.length === 0) return { bought, spentUsd: 0 };
+	const depositUsd = Number((eligible.length * creditUsd).toFixed(6));
+	const depositUrl = `${origin}/credits/issue`;
+	const decision = evaluate(defaultPolicy, depositUrl, depositUsd, 0);
+	emit("policy", { id: "credit-deposit", priceUsd: depositUsd, ...decision });
+	if (decision.verdict === "deny") return { bought, spentUsd: 0 };
+	const approver = async () =>
+		decision.verdict === "allow" ||
+		(await requestApproval({
+			resource: `${eligible.length} private credits`,
+			priceUsd: depositUsd,
+			reason: decision.reason,
+		}));
+	const spentUsd = await credits.buy(payer, eligible.length, approver);
+	for (const item of eligible) {
+		try {
+			bought[item.id] = await credits.spend<unknown>(item.url);
+		} catch (err) {
+			emit("purchase_failed", { id: item.id, error: (err as Error).message });
+		}
+	}
+	return { bought, spentUsd };
+}
+
 export async function runAgent(opts: {
 	privateKey: string;
 	catalogUrl: string;
 	goal: string;
+	privateMode: boolean;
 }) {
 	const payer = createPayer(opts.privateKey);
 	emit("start", {
 		agent: payer.address,
 		balanceUsd: await payer.balanceUsd(),
 		policy: defaultPolicy,
+		privateMode: opts.privateMode,
 	});
 
 	const catalog = (await (
@@ -121,10 +162,10 @@ export async function runAgent(opts: {
 	).json()) as CatalogItem[];
 	emit("catalog", { items: catalog });
 	const chosenIds = await plan(opts.goal, catalog);
-	const { bought, spentUsd } = await buyFeeds(
-		payer,
-		catalog.filter((c) => chosenIds.has(c.id)),
-	);
+	const chosen = catalog.filter((c) => chosenIds.has(c.id));
+	const { bought, spentUsd } = opts.privateMode
+		? await buyFeedsPrivately(payer, chosen, new URL(opts.catalogUrl).origin)
+		: await buyFeeds(payer, chosen);
 
 	const edges =
 		(bought.edge as { signals?: EdgeSignal[] } | undefined)?.signals ?? [];

@@ -3,6 +3,8 @@ import { type CatalogItem, runAgent } from "./agent/agent";
 import { resolveApproval } from "./agent/approvals";
 import { requireEnv } from "./chain";
 import { SERVER } from "./config";
+import type { Token } from "./credits/blind";
+import { depositRequirements, issue, mintInfo, redeem } from "./credits/mint";
 import { clearHistory, emit, replay, subscribe } from "./events";
 import { arbSignals, edgeSignals, marketSnapshot } from "./signals";
 import {
@@ -72,6 +74,62 @@ const catalog = (): CatalogItem[] => [
 	...EXTERNAL_LISTINGS,
 ];
 
+const CREDIT_OFFER = {
+	scheme: "blind-credit",
+	credits: 1,
+	mint: `${SERVER.publicOrigin}/credits/info`,
+};
+
+function parseCredit(header: string): Token | null {
+	const parsed = JSON.parse(Buffer.from(header, "base64").toString("utf8")) as {
+		scheme?: string;
+		serial?: string;
+		signature?: string;
+	};
+	if (parsed.scheme !== "blind-credit") return null;
+	if (!parsed.serial || !parsed.signature)
+		throw new Error("Malformed credit token");
+	return { serial: parsed.serial, signature: parsed.signature };
+}
+
+async function serveWithCredit(
+	feed: Feed,
+	token: Token,
+	accepts: unknown[],
+): Promise<Response> {
+	try {
+		const tag = redeem(token);
+		emit("merchant_redeemed", {
+			feed: feed.id,
+			serialTag: tag,
+			knowsPayer: false,
+		});
+		return json(await feed.produce());
+	} catch (err) {
+		return json(
+			{ x402Version: 1, error: (err as Error).message, accepts },
+			{ status: 402 },
+		);
+	}
+}
+
+async function issueCredits(req: Request): Promise<Response> {
+	const body = (await req.json().catch(() => ({}))) as { blinded?: string[] };
+	const blinded = body.blinded ?? [];
+	try {
+		const requirements = depositRequirements(blinded.length, MERCHANT);
+		const header = req.headers.get(SERVER.paymentHeader);
+		if (!header)
+			return json(
+				{ x402Version: 1, error: "payment required", accepts: [requirements] },
+				{ status: 402 },
+			);
+		return json({ signatures: await issue(header, blinded, MERCHANT) });
+	} catch (err) {
+		return json({ error: (err as Error).message }, { status: 400 });
+	}
+}
+
 async function servePaidFeed(req: Request, feed: Feed): Promise<Response> {
 	const requirements = requirementsFor(
 		new URL(req.url).pathname,
@@ -79,12 +137,15 @@ async function servePaidFeed(req: Request, feed: Feed): Promise<Response> {
 		MERCHANT,
 		feed.description,
 	);
+	const accepts = [requirements, CREDIT_OFFER];
 	const header = req.headers.get(SERVER.paymentHeader);
 	if (!header)
 		return json(
-			{ x402Version: 1, error: "payment required", accepts: [requirements] },
+			{ x402Version: 1, error: "payment required", accepts },
 			{ status: 402 },
 		);
+	const credit = parseCredit(header);
+	if (credit) return serveWithCredit(feed, credit, accepts);
 	try {
 		const proof = decodeProof(header);
 		await verifyPayment(proof, requirements);
@@ -150,17 +211,23 @@ Bun.serve({
 				: json({ error: "unknown feed" }, { status: 404 });
 		},
 		"/events": () => sseStream(),
+		"/credits/info": () => json(mintInfo(MERCHANT)),
+		"/credits/issue": { POST: issueCredits },
 		"/agent/run": {
 			POST: async (req) => {
 				if (running)
 					return json({ error: "agent already running" }, { status: 409 });
-				const body = (await req.json().catch(() => ({}))) as { goal?: string };
+				const body = (await req.json().catch(() => ({}))) as {
+					goal?: string;
+					privateMode?: boolean;
+				};
 				running = true;
 				clearHistory();
 				runAgent({
 					privateKey: AGENT_KEY,
 					catalogUrl: `${SERVER.publicOrigin}/catalog`,
 					goal: body.goal?.trim() || DEFAULT_GOAL,
+					privateMode: body.privateMode !== false,
 				})
 					.catch((err: Error) => emit("error", { error: err.message }))
 					.finally(() => {

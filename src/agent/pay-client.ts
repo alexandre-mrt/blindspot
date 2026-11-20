@@ -50,8 +50,9 @@ export function createPayer(privateKey: string) {
 	async function fetchPaid<T>(
 		url: string,
 		approve: (req: PaymentRequirements) => Promise<boolean>,
+		init: RequestInit = {},
 	): Promise<PaidResult<T>> {
-		const first = await fetch(url);
+		const first = await fetch(url, init);
 		if (first.ok)
 			return { data: (await first.json()) as T, txHash: "", priceUsd: 0 };
 		if (first.status !== 402) throw new Error(`${url} failed: ${first.status}`);
@@ -68,6 +69,7 @@ export function createPayer(privateKey: string) {
 			throw new Error(`Payment for ${url} not approved`);
 		const txHash = await pay(req);
 		const second = await fetch(url, {
+			...init,
 			headers: {
 				[SERVER.paymentHeader]: encodeHeader({ txHash, payer: address }),
 			},
@@ -79,5 +81,12 @@ export function createPayer(privateKey: string) {
 		return { data: (await second.json()) as T, txHash, priceUsd: req.priceUsd };
 	}
 
-	return { address, balanceUsd, fetchPaid };
+	const postPaid = <T>(
+		url: string,
+		body: unknown,
+		approve: (req: PaymentRequirements) => Promise<boolean>,
+	) =>
+		fetchPaid<T>(url, approve, { method: "POST", body: JSON.stringify(body) });
+
+	return { address, balanceUsd, fetchPaid, postPaid };
 }
