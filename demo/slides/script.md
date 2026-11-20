@@ -18,6 +18,9 @@ One Gateway payment, three paid calls, and the seller only sees: anonymous. [PAU
 ---
 For the agent, the seller learns nothing but a valid credit, nothing shows up per call, and there's no gas.
 ---
+The market is already here. More than 250 million agent payments have gone through x402, and the scenario for 2030 is three to five trillion dollars of commerce run by agents.
+Every one of those payments is public today. Sellers pay us a small fee per credit, agents pay the same price.
+---
 And the data is worth buying. On 736 Gemini contracts that settled today, our model beat simply reading the spot price. It's overconfident when it's very sure, and we say so.
 ---
 Built on Circle Gateway nanopayments, x402 version 2, Arc with USDC as gas, and the Gemini prediction markets API. The blind-credit scheme is ours.
