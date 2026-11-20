@@ -1,5 +1,5 @@
 Your trading agent's wallet is its strategy.
-Odds Desk lets an AI agent pay for data on Arc without telling anyone what it bought.
+Blindspot lets an AI agent pay for data on Arc without telling anyone what it bought.
 ---
 Today, with x402, every call an agent pays for is public. Which feed, how often, and what it did right after.
 Anyone can copy that, or trade before it.

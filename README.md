@@ -1,9 +1,9 @@
-# Odds Desk
+# Blindspot
 
-**Private pay-per-request for AI agents, on Arc.** Our agent buys Gemini prediction-market signals for fractions of a cent, and the seller never learns who bought what.
+**Private pay-per-request for AI agents, on Arc.** Our demo agent, Odds Desk, buys Gemini prediction-market signals for fractions of a cent, and the seller never learns who bought what.
 
 - **Track:** Agentic Payments and AI · **Chain award:** Arc · **Bounty:** Gemini Prediction Markets
-- **Slides:** [`demo/slides/odds-desk.pdf`](demo/slides/odds-desk.pdf)
+- **Slides:** [`demo/slides/blindspot.pdf`](demo/slides/blindspot.pdf)
 
 ## The problem
 
@@ -22,7 +22,7 @@ flowchart LR
     S -- "Gemini signals, payer anonymous" --> A
 ```
 
-| | Plain x402 | Odds Desk |
+| | Plain x402 | Blindspot |
 |---|---|---|
 | Seller learns | wallet, feed, time | a valid credit |
 | Visible per request | a payment | nothing |
