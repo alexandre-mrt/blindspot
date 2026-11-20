@@ -19,7 +19,7 @@ type RoutesConfig = Parameters<typeof paymentMiddleware>[0];
 
 const GATEWAY_TESTNET_FACILITATOR = "https://gateway-api-testnet.circle.com";
 
-export type Feed = {
+type Feed = {
 	id: string;
 	price: string;
 	description: string;
@@ -98,15 +98,8 @@ function routes(payTo: string): RoutesConfig {
 
 export function createPaywalledApp(payTo: string, origin: string) {
 	const mint = createMint();
-	const blindFacilitator = new BlindCreditFacilitator(
-		mint,
-		ARC.caip2,
-		(tag, req) =>
-			emit("merchant_redeemed", {
-				serialTag: tag,
-				resource: req.extra?.mint ? "feed" : "unknown",
-				knowsPayer: false,
-			}),
+	const blindFacilitator = new BlindCreditFacilitator(mint, ARC.caip2, (tag) =>
+		emit("merchant_redeemed", { serialTag: tag, payer: "anonymous" }),
 	);
 	const resourceServer = new x402ResourceServer([
 		circleGatewayFacilitator(),

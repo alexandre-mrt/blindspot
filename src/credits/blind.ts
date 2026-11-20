@@ -1,7 +1,7 @@
 import { createHash, generateKeyPairSync, randomBytes } from "node:crypto";
 
 export type PublicKey = { n: bigint; e: bigint };
-export type KeyPair = PublicKey & { d: bigint };
+type KeyPair = PublicKey & { d: bigint };
 export type Token = { serial: string; signature: string };
 
 const FDH_BLOCKS = 8;
@@ -14,7 +14,7 @@ export const hexToBig = (hex: string) => {
 	return BigInt(`0x${hex}`);
 };
 
-export function modPow(base: bigint, exp: bigint, mod: bigint): bigint {
+function modPow(base: bigint, exp: bigint, mod: bigint): bigint {
 	let result = 1n;
 	let b = base % mod;
 	let e = exp;
@@ -26,7 +26,7 @@ export function modPow(base: bigint, exp: bigint, mod: bigint): bigint {
 	return result;
 }
 
-export function modInverse(a: bigint, m: bigint): bigint {
+function modInverse(a: bigint, m: bigint): bigint {
 	let [oldR, r] = [((a % m) + m) % m, m];
 	let [oldS, s] = [1n, 0n];
 	while (r !== 0n) {
@@ -47,7 +47,7 @@ export function generateKeyPair(): KeyPair {
 	return { n: b64ToBig(jwk.n), e: b64ToBig(jwk.e), d: b64ToBig(jwk.d) };
 }
 
-export function hashToDomain(serial: string, n: bigint): bigint {
+function hashToDomain(serial: string, n: bigint): bigint {
 	const blocks = Array.from({ length: FDH_BLOCKS }, (_, i) =>
 		createHash("sha256")
 			.update(`odds-desk-credit:${i}:${serial}`)

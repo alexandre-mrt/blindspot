@@ -83,5 +83,5 @@ export function createCreditWallet(origin: string) {
 		return (await res.json()) as T;
 	}
 
-	return { buyBatch, spend, remaining: () => tokens.length };
+	return { buyBatch, spend };
 }

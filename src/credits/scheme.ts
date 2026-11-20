@@ -51,10 +51,7 @@ export class BlindCreditFacilitator implements FacilitatorClient {
 	constructor(
 		private readonly mint: Mint,
 		private readonly network: Network,
-		private readonly onRedeem: (
-			tag: string,
-			requirements: PaymentRequirements,
-		) => void,
+		private readonly onRedeem: (tag: string) => void,
 	) {}
 
 	async getSupported(): Promise<SupportedResponse> {
@@ -73,13 +70,10 @@ export class BlindCreditFacilitator implements FacilitatorClient {
 			: { isValid: true, payer: ANONYMOUS };
 	}
 
-	async settle(
-		payload: PaymentPayload,
-		requirements: PaymentRequirements,
-	): Promise<SettleResponse> {
+	async settle(payload: PaymentPayload): Promise<SettleResponse> {
 		try {
 			const tag = this.mint.redeem(toToken(payload));
-			this.onRedeem(tag, requirements);
+			this.onRedeem(tag);
 			return {
 				success: true,
 				transaction: `credit:${tag}`,

@@ -1,10 +1,6 @@
 export const ARC = {
-	chainId: 5042002,
-	rpcUrl: process.env.ARC_RPC_URL ?? "https://rpc.testnet.arc.network",
 	explorer: "https://testnet.arcscan.app",
-	usdc: "0x3600000000000000000000000000000000000000",
 	usdcDecimals: 6,
-	network: "arc-testnet",
 	caip2: "eip155:5042002",
 } as const;
 
@@ -18,9 +14,6 @@ export const SERVER = {
 	port: Number(process.env.PORT ?? 4021),
 	publicOrigin:
 		process.env.PUBLIC_ORIGIN ?? `http://localhost:${process.env.PORT ?? 4021}`,
-	paymentHeader: "x-payment",
-	paymentResponseHeader: "x-payment-response",
-	maxPaymentAgeSeconds: 600,
 } as const;
 
 export const POLICY = {

@@ -6,7 +6,7 @@ import {
 	recentCloses,
 } from "./gemini";
 
-export type MarketQuote = {
+type MarketQuote = {
 	event: string;
 	contract: string;
 	symbol: string;

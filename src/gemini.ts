@@ -1,6 +1,6 @@
 import { GEMINI } from "./config";
 
-export type ContractPrices = { bestBid?: string; bestAsk?: string };
+type ContractPrices = { bestBid?: string; bestAsk?: string };
 export type GeminiContract = {
 	label: string;
 	instrumentSymbol: string;

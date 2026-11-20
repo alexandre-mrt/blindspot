@@ -1,6 +1,6 @@
 import { POLICY } from "../config";
 
-export type PolicyDecision =
+type PolicyDecision =
 	| { verdict: "allow" }
 	| { verdict: "needs_approval"; reason: string }
 	| { verdict: "deny"; reason: string };

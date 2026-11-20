@@ -1,4 +1,4 @@
-export type AgentEvent = { type: string; at: string; [key: string]: unknown };
+type AgentEvent = { type: string; at: string; [key: string]: unknown };
 
 type Listener = (event: AgentEvent) => void;
 const listeners = new Set<Listener>();
