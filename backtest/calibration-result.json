@@ -1,0 +1,49 @@
+{
+	"window": "Gemini crypto strike ladders settled in the last 24h",
+	"entry": "60 min before expiry",
+	"events": 84,
+	"all": {
+		"n": 736,
+		"brierModel": 0.11189268264240874,
+		"brierSpotSide": 0.15217391304347827,
+		"brierCoinFlip": 0.25
+	},
+	"contested": {
+		"n": 222,
+		"brierModel": 0.21676567825970855,
+		"brierSpotSide": 0.34234234234234234,
+		"brierCoinFlip": 0.25
+	},
+	"calibration": [
+		{
+			"bucket": "0-20%",
+			"n": 247,
+			"predicted": 0.03299338488596273,
+			"realized": 0.032388663967611336
+		},
+		{
+			"bucket": "20-40%",
+			"n": 52,
+			"predicted": 0.29826734102859764,
+			"realized": 0.2692307692307692
+		},
+		{
+			"bucket": "40-60%",
+			"n": 45,
+			"predicted": 0.4940630671815895,
+			"realized": 0.4222222222222222
+		},
+		{
+			"bucket": "60-80%",
+			"n": 57,
+			"predicted": 0.7014562536823041,
+			"realized": 0.5964912280701754
+		},
+		{
+			"bucket": "80-100%",
+			"n": 335,
+			"predicted": 0.9721162680904747,
+			"realized": 0.8686567164179104
+		}
+	]
+}

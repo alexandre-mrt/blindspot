@@ -38,12 +38,11 @@ export async function listActiveEvents(
 	return body.data;
 }
 
-export async function recentCloses(
+export async function closesBetween(
 	index: string,
-	minutes: number,
+	start: number,
+	end: number,
 ): Promise<number[]> {
-	const end = Date.now();
-	const start = end - minutes * 60_000;
 	const params = new URLSearchParams({
 		agency: "lukka",
 		index,
@@ -56,3 +55,6 @@ export async function recentCloses(
 		.sort((a, b) => (a[0] ?? 0) - (b[0] ?? 0))
 		.map((row) => Number(row[4]));
 }
+
+export const recentCloses = (index: string, minutes: number) =>
+	closesBetween(index, Date.now() - minutes * 60_000, Date.now());

@@ -79,7 +79,7 @@ function normCdf(x: number): number {
 	return x > 0 ? 1 - p : p;
 }
 
-function realizedVolPerMinute(closes: number[]): number {
+export function realizedVolPerMinute(closes: number[]): number {
 	const returns = closes.slice(1).map((c, i) => Math.log(c / (closes[i] ?? c)));
 	if (returns.length < 10)
 		throw new Error("Not enough kline data to estimate volatility");
@@ -89,7 +89,7 @@ function realizedVolPerMinute(closes: number[]): number {
 	return Math.sqrt(variance);
 }
 
-function probabilityAbove(
+export function probabilityAbove(
 	spot: number,
 	strike: number,
 	volPerMin: number,
