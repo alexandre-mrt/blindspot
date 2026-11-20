@@ -26,6 +26,6 @@ export const POLICY = {
 
 export const SIGNAL = {
 	minEdge: 0.05,
-	maxEvents: 40,
+	maxEvents: 100,
 	minutesPerYear: 525_600,
 } as const;
