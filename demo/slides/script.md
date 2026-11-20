@@ -2,7 +2,7 @@ Hi, and thanks for taking a few minutes to watch this. I'll keep it quick and to
 Let's start with a story we've all lived. You find a great spot: a quiet beach, a little restaurant. You tell one friend. Next summer, the beach is packed.
 A good tip is only worth something while nobody else knows it.
 AI agents live this every day. They pay for their data in public, so anyone can see their good spots.
-Blindspot fixes that. Agents keep paying per request, but nobody can see what they buy. Let me show you the problem, then how we solve it.
+Blindspot solves that with private credits: the agent pays once through Circle Gateway on Arc, then pays every request with a credit that can't be traced back to it. Let me show you the problem, then how it works.
 ---
 Here is the problem. Our agent buys market data, one call at a time, a fraction of a cent each.
 Every one of those payments is public. Anyone can see what it reads, how often, and then watch it trade a few seconds later. Copying it doesn't take skill, just speed.
