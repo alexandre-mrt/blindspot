@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>
+  @font-face { font-family: "DM Sans"; src: url(../slides/fonts/DMSans-Bold.ttf); font-weight: 700; }
+  @font-face { font-family: "DM Sans"; src: url(../slides/fonts/DMSans-Regular.ttf); font-weight: 400; }
+  @font-face { font-family: "Space Mono"; src: url(../slides/fonts/SpaceMono-Regular.ttf); }
+  * { box-sizing: border-box; }
+  body { margin: 0; width: 1280px; height: 720px; background: #0b0f1a; color: #ddd6dd; font-family: "DM Sans", sans-serif; position: relative; overflow: hidden; }
+  .frame { position: absolute; inset: 18px; border: 3px solid #2f578c; }
+  .corner { position: absolute; width: 48px; height: 48px; }
+  .corner i { position: absolute; width: 12px; height: 12px; background: #e9a13f; }
+  .tl { left: 10px; top: 10px; } .tr { right: 10px; top: 10px; transform: scaleX(-1); }
+  .bl { left: 10px; bottom: 10px; transform: scaleY(-1); } .br { right: 10px; bottom: 10px; transform: scale(-1); }
+  .fog { position: absolute; inset: 0; background: radial-gradient(ellipse at 78% 60%, rgba(65, 44, 92, 0.55), transparent 60%); }
+  .eyebrow { position: absolute; left: 72px; top: 58px; font-family: "Space Mono", monospace; font-size: 24px; color: #e9a13f; }
+  h1 { position: absolute; left: 66px; top: 118px; margin: 0; font-size: 150px; line-height: 1; font-weight: 700; color: #ffcc6f; letter-spacing: -2px; }
+  .tag { position: absolute; left: 72px; top: 296px; width: 620px; margin: 0; font-size: 40px; line-height: 1.2; font-weight: 700; color: #fff; }
+  .sub { position: absolute; left: 72px; top: 414px; width: 560px; margin: 0; font-size: 26px; line-height: 1.35; color: #acc6e9; }
+  .scene { position: absolute; right: 70px; top: 150px; width: 520px; height: 460px; }
+  .scene img { position: absolute; image-rendering: pixelated; }
+  .agent { left: 0; top: 120px; height: 300px; }
+  .merchant { right: 0; top: 150px; height: 250px; }
+  .mask { right: 70px; top: 0; height: 150px; }
+  .credit { left: 175px; top: 230px; height: 90px; transform: rotate(-8deg); }
+  .coin { left: 150px; top: 120px; height: 70px; }
+  .lane { position: absolute; left: 150px; top: 300px; width: 230px; border-top: 4px dashed #c9a7ff; }
+  .logo { position: absolute; right: 64px; bottom: 50px; height: 34px; }
+  .chips { position: absolute; left: 72px; bottom: 56px; display: flex; gap: 14px; font-family: "Space Mono", monospace; font-size: 20px; }
+  .chips span { padding: 6px 14px; border: 2px solid #2f578c; color: #acc6e9; }
+</style>
+</head>
+<body>
+  <div class="fog"></div>
+  <div class="frame"></div>
+  <div class="corner tl"><i style="left:0;top:0"></i><i style="left:12px;top:0"></i><i style="left:24px;top:0"></i><i style="left:0;top:12px"></i><i style="left:0;top:24px"></i></div>
+  <div class="corner tr"><i style="left:0;top:0"></i><i style="left:12px;top:0"></i><i style="left:24px;top:0"></i><i style="left:0;top:12px"></i><i style="left:0;top:24px"></i></div>
+  <div class="corner bl"><i style="left:0;top:0"></i><i style="left:12px;top:0"></i><i style="left:24px;top:0"></i><i style="left:0;top:12px"></i><i style="left:0;top:24px"></i></div>
+  <div class="corner br"><i style="left:0;top:0"></i><i style="left:12px;top:0"></i><i style="left:24px;top:0"></i><i style="left:0;top:12px"></i><i style="left:0;top:24px"></i></div>
+  <p class="eyebrow">UBC 2026 · Agentic payments on Arc</p>
+  <h1>Blindspot</h1>
+  <p class="tag">AI agents pay per request. Nobody sees what they buy.</p>
+  <p class="sub">One gasless Circle Gateway payment, then blind-signed credits over x402.</p>
+  <div class="scene">
+    <div class="lane"></div>
+    <img class="agent" src="../../public/sprites/agent.png" alt="" />
+    <img class="coin" src="../../public/sprites/coin.png" alt="" />
+    <img class="credit" src="../../public/sprites/credit.png" alt="" />
+    <img class="merchant" src="../../public/sprites/merchant.png" alt="" />
+    <img class="mask" src="../../public/sprites/mask.png" alt="" />
+  </div>
+  <div class="chips"><span>x402</span><span>Circle Gateway</span><span>Gemini markets</span></div>
+  <img class="logo" src="../slides/arc/logo-ondark.png" alt="Arc" />
+</body>
+</html>
