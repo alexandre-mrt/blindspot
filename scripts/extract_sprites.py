@@ -1,5 +1,3 @@
-"""Extract individual transparent sprites from the generated sprite sheet."""
-
 import sys
 from pathlib import Path
 

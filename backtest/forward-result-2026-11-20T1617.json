@@ -1,52 +1,52 @@
 {
-  "capturedAt": "2026-11-20T16:17:41.223Z",
-  "rule": "take every signal with edge >= 5 pts, 1 contract at the quoted ask (YES) or 1 - bid (NO)",
-  "settled": 5,
-  "pending": 46,
-  "hitRate": 0.4,
-  "stakedUsd": 2.2800000000000002,
-  "pnlUsd": -0.28,
-  "roi": -0.12280701754385964,
-  "trades": [
-    {
-      "symbol": "GEMI-ETH2611201700-HI1660",
-      "side": "BUY_YES",
-      "edge": 0.0998827795613445,
-      "cost": 0.3,
-      "payout": 0,
-      "pnl": -0.3
-    },
-    {
-      "symbol": "GEMI-BTC2611201700-HI59400",
-      "side": "BUY_NO",
-      "edge": 0.06750287414616202,
-      "cost": 0.47,
-      "payout": 0,
-      "pnl": -0.47
-    },
-    {
-      "symbol": "GEMI-BTC2611201700-HI59500",
-      "side": "BUY_NO",
-      "edge": 0.06370861702060193,
-      "cost": 0.55,
-      "payout": 1,
-      "pnl": 0.44999999999999996
-    },
-    {
-      "symbol": "GEMI-BTC2611201700-HI59600",
-      "side": "BUY_NO",
-      "edge": 0.05563849458293091,
-      "cost": 0.63,
-      "payout": 1,
-      "pnl": 0.37
-    },
-    {
-      "symbol": "GEMI-BTC2611201700-HI59200",
-      "side": "BUY_NO",
-      "edge": 0.05340510762046613,
-      "cost": 0.32999999999999996,
-      "payout": 0,
-      "pnl": -0.32999999999999996
-    }
-  ]
+	"capturedAt": "2026-11-20T16:17:41.223Z",
+	"rule": "take every signal with edge >= 5 pts, 1 contract at the quoted ask (YES) or 1 - bid (NO)",
+	"settled": 5,
+	"pending": 46,
+	"hitRate": 0.4,
+	"stakedUsd": 2.2800000000000002,
+	"pnlUsd": -0.28,
+	"roi": -0.12280701754385964,
+	"trades": [
+		{
+			"symbol": "GEMI-ETH2611201700-HI1660",
+			"side": "BUY_YES",
+			"edge": 0.0998827795613445,
+			"cost": 0.3,
+			"payout": 0,
+			"pnl": -0.3
+		},
+		{
+			"symbol": "GEMI-BTC2611201700-HI59400",
+			"side": "BUY_NO",
+			"edge": 0.06750287414616202,
+			"cost": 0.47,
+			"payout": 0,
+			"pnl": -0.47
+		},
+		{
+			"symbol": "GEMI-BTC2611201700-HI59500",
+			"side": "BUY_NO",
+			"edge": 0.06370861702060193,
+			"cost": 0.55,
+			"payout": 1,
+			"pnl": 0.44999999999999996
+		},
+		{
+			"symbol": "GEMI-BTC2611201700-HI59600",
+			"side": "BUY_NO",
+			"edge": 0.05563849458293091,
+			"cost": 0.63,
+			"payout": 1,
+			"pnl": 0.37
+		},
+		{
+			"symbol": "GEMI-BTC2611201700-HI59200",
+			"side": "BUY_NO",
+			"edge": 0.05340510762046613,
+			"cost": 0.32999999999999996,
+			"payout": 0,
+			"pnl": -0.32999999999999996
+		}
+	]
 }
