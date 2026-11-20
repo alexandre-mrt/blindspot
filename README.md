@@ -1,118 +1,134 @@
 # Odds Desk
 
-An AI research agent that **buys prediction-market intelligence per request** with **x402 + Circle Gateway Nanopayments on Arc** (gasless, sub-cent USDC), under spend guardrails enforced as native x402 hooks, and **privately**, through a new x402 payment scheme we added: **`blind-credit`** (Chaum blind signatures).
+**What if your competitor could read your trading agent's shopping list?** Today they can: every x402 payment an agent makes is public, so the feeds it buys, how often and when are all on-chain. Odds Desk is an AI trading-research agent that buys prediction-market signals per request for fractions of a cent, and pays **privately**.
 
 - **Main track:** Agentic Payments and AI
 - **Chain award:** Best use of Arc
 - **Bounty:** Gemini Prediction Markets
 
-## The problem
+## Problem
 
-1. **Agents paying for data leak their strategy.** A trading agent that pays per request in the clear tells anyone watching its address which vendor, which feed (prices are unique) and when. That is front-runnable alpha.
-2. **Per-request on-chain payments don't scale** to $0.001 calls, and an agent with an unconstrained key is not something a human will fund.
+- **Who:** autonomous agents that pay for data per call (trading, research, monitoring).
+- **How bad:** a paying agent's address is a live feed of its strategy. Prices identify the feed, timestamps give the cadence, and anyone can front-run the trade the data was bought for.
+- **Why unsolved:** x402 settles every payment in the clear, and on-chain privacy tools (mixers, shielded pools) are too slow and too heavy for $0.001 calls.
+- **Why now:** Circle Gateway Nanopayments (gasless, batched, live on Arc) make sub-cent payments practical, and x402 v2 lets anyone plug in a new payment scheme.
 
-## What we built
+## Solution
 
-- **Seller**: a Gemini prediction-market signal API, monetized with the stock x402 resource server (`@x402/hono`) and Circle's Gateway scheme (`GatewayEvmScheme` + `BatchFacilitatorClient`, `@circle-fin/x402-batching` 4.0). Every feed also accepts our `blind-credit` scheme, registered on the same `x402ResourceServer`.
-- **Buyer agent**: plans, pays and decides. Public payments go through Circle's `GatewayClient` (one on-chain deposit, then signed off-chain nanopayments settled in batches by Circle). Guardrails run inside the SDK as an `onBeforePaymentCreation` lifecycle hook. Private payments go through the stock `x402Client` + `wrapFetchWithPayment` with our `BlindCreditClientScheme` and x402 `spendControls`.
-- **SDK extension**: `blind-credit`, a new x402 scheme implementing the official `SchemeNetworkClient`, `SchemeNetworkServer` and `FacilitatorClient` interfaces from `@x402/core`, with a spec in [`specs/scheme_blind_credit.md`](specs/scheme_blind_credit.md) following the x402 scheme template.
+**Odds Desk adds Chaumian e-cash to x402.** The agent buys a batch of blind-signed credits with one Circle Gateway nanopayment, then pays every request with a credit the seller can verify but can never link to the buyer.
 
-## Latest stack features used
+```
+                 1 gasless nanopayment ($0.01 for 5 credits)
+  Agent  ────────────────────────────────────────────►  Odds Desk  ──►  Circle Gateway (Arc)
+  blinds serials, unblinds signatures                   mint signs blind values only
+     │
+     │  each request: x402 "blind-credit" payment (serial, signature)
+     └───────────────────────────────────────────────►  verifies signature + unspent
+                                                         payer = "anonymous", no wallet, no tx
+```
 
-| Feature | Package / version | Where |
+**Core insight:** settlement and authorization do not have to be the same event. Money moves once, publicly and cheaply, through Gateway. Access is proven many times, privately, with a signature the seller issued but cannot recognize.
+
+### What it is built on (and what we added)
+
+| Layer | What we used | Version |
 |---|---|---|
-| Circle Gateway Nanopayments on Arc testnet (gasless, batched) | `@circle-fin/x402-batching` 4.0.0 | all public payments, credit batch purchase |
-| x402 client lifecycle hooks | `GatewayClient.onBeforePaymentCreation` | `src/agent/gateway-payer.ts`: allowlist, cap, budget, human approval |
-| x402 `spendControls` (per-asset caps) | `@x402/core` 2.31 | `src/agent/credit-wallet.ts` |
-| Pluggable schemes, multi-facilitator resource server | `@x402/core` 2.31, `@x402/hono` | `src/paywall.ts`: Gateway + blind-credit on one server |
-| Server settle hooks | `x402ResourceServer.onAfterSettle` | `src/paywall.ts`: live merchant feed |
+| Settlement | Circle Gateway Nanopayments on Arc testnet: `GatewayClient`, `GatewayEvmScheme`, `BatchFacilitatorClient` | `@circle-fin/x402-batching` 4.0.0 |
+| Seller | Stock x402 resource server with two schemes and two facilitators | `@x402/core`, `@x402/hono` 2.31 |
+| Guardrails | x402 client lifecycle hook `onBeforePaymentCreation` + `spendControls` | 2.31 |
+| **Added** | **`blind-credit`**, a new x402 scheme implementing the official `SchemeNetworkClient`, `SchemeNetworkServer` and `FacilitatorClient` interfaces. Spec: [`specs/scheme_blind_credit.md`](specs/scheme_blind_credit.md) | this repo |
+| Data | Gemini Prediction Markets events + Lukka settlement-index klines | public API |
 
-## How it works
+## What the agent does
 
-```
-Agent (buyer)                                Odds Desk (seller, @x402/hono)            Circle / Arc
- GatewayClient.deposit(0.5 USDC) ───────────────────────────────────────────────────► Gateway Wallet (1 on-chain tx)
-
- PUBLIC MODE
- GatewayClient.pay(feed) ─ GET ─────────────► 402 accepts [exact/Gateway, blind-credit]
-  onBeforePaymentCreation: policy ─ deny / human approval / allow
-  sign EIP-3009 authorization off-chain ─────► BatchFacilitatorClient.verify/settle ──► batched settlement
-                               ◄──────────── signal data
-
- PRIVATE MODE
- blind serials b_1..b_5 ─ POST /credits/issue (paid $0.01 via Gateway, same hook) ─► mint signs b_i blind
- unblind + verify s_i
- x402Client(BlindCreditClientScheme) ─ GET ─► BlindCreditFacilitator: s^e == FDH(serial), unspent
-                               ◄──────────── signal data, payer = "anonymous", no signature from the wallet
-```
+1. **Fund**: tops up its Circle Gateway balance on Arc if it is under $0.05 (the only on-chain transaction).
+2. **Discover**: reads the free `/catalog` of paid feeds.
+3. **Plan**: picks feeds for its goal (Claude when `ANTHROPIC_API_KEY` is set, otherwise a heuristic that wants everything, so the guardrails have to work).
+4. **Guard and pay**: every payment passes the policy hook. In private mode it buys one credit batch, then pays each feed with a credit.
+5. **Decide**: ladder arbitrage if any, else the contract with the largest edge between its volatility model and the Gemini book, with a paper stake of min(10% of $100, $100 × edge). It never places real orders.
+6. **Brief**: shows and reads aloud a 3-sentence call.
 
 ### Paid feeds
 
-| Feed | Gateway price | Credit price | What it computes |
+| Feed | Gateway price | Private price | What it computes |
 |---|---|---|---|
-| `snapshot` | $0.001 | 1 credit | Bid/ask of every open Gemini prediction market contract |
-| `arb` | $0.002 | 1 credit | Strike-ladder arbitrage: a higher strike whose bid exceeds a lower strike's ask is a locked profit |
-| `edge` | $0.005 | 1 credit | Fair value of each crypto contract from a lognormal model fed by realized 1-minute volatility of the exact Lukka index Gemini settles against, compared with the Gemini book, ranked by tradable edge |
-| `whale` | $0.50 | 1 credit | Listed under an unvetted origin so the guardrails can be seen refusing it |
+| `snapshot` | $0.001 | 1 credit | Bid/ask of every open Gemini prediction market |
+| `arb` | $0.002 | 1 credit | Strike-ladder arbitrage: a higher strike bid above a lower strike ask is a locked profit |
+| `edge` | $0.005 | 1 credit | Fair value of each crypto contract from a lognormal model on 2h realized volatility of the exact Lukka index Gemini settles on, versus the Gemini book |
+| `whale` | $0.50 | 1 credit | Listed under an unvetted origin to show the guardrails refusing it |
 
-### Privacy: the `blind-credit` scheme
+One credit buys any feed, so a credit payment does not reveal which feed was bought.
 
-The agent buys 5 credits for $0.01 in one Gateway nanopayment. Before paying it draws 5 random serials and blinds them (`b = FDH(serial) · r^e mod n`); the mint signs `b` without seeing the serial. Every later request pays with `(serial, s)`. The seller can check `s^e == FDH(serial)` and that the serial is unspent, but cannot link the request to the purchase, to the wallet, or to the other requests. One credit per request regardless of the feed, so the payment does not reveal what was bought. Full spec, properties and limits: [`specs/scheme_blind_credit.md`](specs/scheme_blind_credit.md).
-
-Honest limits: the batch purchase is still linkable to the buyer, network metadata (IP, timing) is out of scope, and the mint key is in memory.
-
-### The agent's decision loop
-
-1. **Fund**: top up the Circle Gateway balance if it is below $0.05 (one on-chain deposit).
-2. **Discover**: fetch the free `/catalog`.
-3. **Plan**: choose feeds. Claude when `ANTHROPIC_API_KEY` is set, otherwise a heuristic that wants everything, so the guardrails have to do their job.
-4. **Guard + pay**: public mode pays each feed through `GatewayClient.pay`, the policy hook can abort or wait for a human. Private mode checks each target against the same policy, buys one credit batch (through the same hook), then spends credits.
-5. **Decide**: ladder arbitrage if any, else the highest-edge contract with paper stake min(10% of $100, $100 × edge), else hold. No real Gemini orders are placed.
-6. **Brief**: a short briefing shown and read aloud on the dashboard.
-
-Every step streams to the dashboard (SSE).
-
-### Safety limits (`src/config.ts`, `src/agent/policy.ts`)
+### Safety limits
 
 | Guardrail | Value | Enforced by |
 |---|---|---|
-| Origin allowlist | Odds Desk origin only | `onBeforePaymentCreation` hook (aborts payment creation) and pre-spend check for credits |
+| Origin allowlist | Odds Desk only | `onBeforePaymentCreation` hook (aborts inside the SDK) and a pre-spend check for credits |
 | Per-call cap | $0.01 | hook |
 | Session budget | $0.05 | hook |
-| Human approval | above $0.004 | hook waits for Approve / Reject on the dashboard, auto-reject after 60 s |
+| Human approval | above $0.004 | hook waits for Approve / Reject on the dashboard, rejects after 60 s |
 | Asset caps | credit asset only, 1 per payment | x402 `spendControls` |
-| Double spend | spent-serial set | `BlindCreditFacilitator.verify/settle` |
+| Double spend | spent-serial set | `BlindCreditFacilitator` |
 
-## How it uses Arc
+## Privacy properties
 
-Arc is Circle's stablecoin L1 where USDC is the gas token, and Circle Gateway is live on Arc testnet: the agent deposits USDC once on Arc, then pays sub-cent amounts without gas, settled in batches by Circle. One asset, prices in cents, no volatile gas token.
+| Property | Why it holds |
+|---|---|
+| Unlinkable | The mint only ever sees `b = FDH(serial) · r^e mod n`, uniformly random to it; at redemption it sees `(serial, s)` for the first time |
+| Unforgeable | Producing `s` for a new serial needs the mint's RSA key (RSA-FDH, 2048-bit) |
+| Feed-hiding | Every feed costs exactly one credit |
+| Not a mixer | Money still settles through Circle Gateway; only access is private |
+
+**Limits, stated plainly:** the batch purchase is linkable to the buyer, network metadata (IP, timing) is out of scope, and the mint key lives in memory.
+
+## Backtest
+
+Does the signal the agent pays for hold up? `bun backtest/calibration.ts` replays the model on every Gemini crypto strike ladder settled in the last 24h (84 events, 736 contracts), pricing each contract 60 minutes before expiry from Lukka settlement-index klines only, and scores it against the real resolution.
+
+| Forecaster | Brier, all (n=736) | Brier, contested 10–90% (n=222) |
+|---|---|---|
+| Odds Desk volatility model | **0.112** | **0.217** |
+| Naive: spot already past the strike | 0.152 | 0.342 |
+| Coin flip | 0.250 | 0.250 |
+
+Calibration (model says → realized): 0–20% → 3% vs 3%, 20–40% → 30% vs 27%, 40–60% → 49% vs 42%, 60–80% → 70% vs 60%, 80–100% → 97% vs 87%. The model is overconfident at the top (fat tails a 2h realized volatility misses), which is why the agent only acts on edges of 5 points or more and sizes small.
+
+Gemini publishes no historical contract prices, so P&L against the book cannot be backtested from the API. `backtest/snapshot.ts` records live signals with their bid/ask and `backtest/settle.ts` scores them once the contracts resolve (forward paper test).
+
+## Scale
+
+Redeeming a credit costs **0.063 ms** (one RSA verification with e = 65537, measured on an M-series laptop core): about **16,000 private paid requests per second per core**, with no chain in the loop. Settlement load is one Gateway nanopayment per batch, which Circle settles in batches across all buyers.
+
+## Arc details
 
 | Item | Value |
 |---|---|
 | Network | Arc testnet, `eip155:5042002` |
 | USDC | `0x3600000000000000000000000000000000000000` |
-| Circle Gateway Wallet (Arc testnet) | `0x0077777d7EBA4688BDeF3E311b846F25870A19B9` |
-| Gateway facilitator | `https://gateway-api-testnet.circle.com` |
-| Agent (buyer) | `0xa3dAa7D967629cc4a4B99c3Cc12fB3C2d7D20e05` |
-| Merchant (payTo) | `0xc1232D14AE5f79922a5B7b4384023fAA89B074Fa` |
+| Circle Gateway Wallet | `0x0077777d7EBA4688BDeF3E311b846F25870A19B9` |
+| Gateway facilitator (testnet) | `https://gateway-api-testnet.circle.com` |
+| Agent | `0xa3dAa7D967629cc4a4B99c3Cc12fB3C2d7D20e05` |
+| Merchant | `0xc1232D14AE5f79922a5B7b4384023fAA89B074Fa` |
+| Gateway deposit | [0xf02658cd…](https://testnet.arcscan.app/tx/0xf02658cd5718fe230e468e9f7bcd179359f2cdec8efeee678f67b1fc5d024d22) |
 
-Gateway deposit on Arc testnet: [0xf02658cd…](https://testnet.arcscan.app/tx/0xf02658cd5718fe230e468e9f7bcd179359f2cdec8efeee678f67b1fc5d024d22). No custom contract is deployed.
+No custom contract is deployed. Arc uses USDC as gas, so the agent holds a single asset and every price is in cents.
 
-## How it uses Gemini Prediction Markets
+## Gemini Prediction Markets usage
 
 - `GET /v1/prediction-markets/events?status=active&category=Crypto`: events, contracts, strikes, expiries, `bestBid` / `bestAsk`.
-- `GET /v2/klines?agency=lukka&index=…`: the settlement index of each contract (`contract.source`), for spot and realized volatility.
+- `GET /v2/klines?agency=lukka&index=…`: the settlement index of each contract, for spot and realized volatility.
 
-## SDK friction we hit (and worked around)
+## SDK friction we hit
 
-- `BatchFacilitatorClient` defaults to the mainnet Gateway API; on Arc testnet it must be pointed at `https://gateway-api-testnet.circle.com`, otherwise the x402 server refuses to start (`Facilitator does not support scheme "exact" on network "eip155:5042002"`).
-- `@circle-fin/x402-batching` 4.0 ships its own copies of the x402 types, which are not assignable to `@x402/core` 2.31's `FacilitatorClient`, so wiring it into `x402ResourceServer` needs a cast.
+- `BatchFacilitatorClient` defaults to the mainnet Gateway API. On Arc testnet the x402 server refuses to start (`Facilitator does not support scheme "exact" on network "eip155:5042002"`) until it is pointed at `https://gateway-api-testnet.circle.com`.
+- `@circle-fin/x402-batching` 4.0 ships its own x402 types, which are not assignable to `@x402/core` 2.31's `FacilitatorClient`, so wiring it into `x402ResourceServer` needs a cast.
+- Gemini lists 5-minute up/down markets first; a client reading only the first page sees no strike ladders.
 
 ## Run it
 
 ```bash
 bun install
-cp .env.example .env   # AGENT_PRIVATE_KEY, MERCHANT_ADDRESS (ANTHROPIC_API_KEY optional)
+cp .env.example .env   # AGENT_PRIVATE_KEY, MERCHANT_ADDRESS, optional ANTHROPIC_API_KEY
 # fund the agent with Arc testnet USDC: https://faucet.circle.com
 bun run start          # http://localhost:4021
 bun test
@@ -122,20 +138,16 @@ bun test
 
 | Path | Role |
 |---|---|
-| `src/paywall.ts` | x402 resource server: Circle Gateway scheme + blind-credit scheme, feed and credit-issuance routes |
 | `src/credits/scheme.ts` | `blind-credit` x402 scheme: client, server, facilitator |
-| `src/credits/blind.ts` | RSA-FDH blind signatures |
-| `src/credits/mint.ts` | Batch signing, redemption, spent set |
+| `src/credits/blind.ts`, `src/credits/mint.ts` | RSA-FDH blind signatures, batch signing, spent set |
+| `src/paywall.ts` | x402 resource server: Gateway + blind-credit, feed and issuance routes |
 | `src/agent/gateway-payer.ts` | Circle `GatewayClient` with the policy hook |
-| `src/agent/credit-wallet.ts` | Blind, buy, unblind, spend with `x402Client` |
-| `src/agent/agent.ts` | Decision loop |
-| `src/agent/policy.ts` | Guardrails |
+| `src/agent/credit-wallet.ts` | Blind, buy, unblind, spend via `x402Client` |
+| `src/agent/agent.ts`, `src/agent/policy.ts` | Decision loop and guardrails |
 | `src/signals.ts`, `src/gemini.ts` | Gemini data and quant signals |
-| `src/server.ts` | Bun server, SSE, dashboard |
-| `specs/scheme_blind_credit.md` | Scheme spec |
+| `src/server.ts`, `public/` | Bun server, SSE, dashboard |
+| `backtest/` | Calibration backtest and forward paper test |
 
-## What's next
+## Next
 
-- Upstream `blind-credit` to the x402 repo (spec + TS mechanism package), with persistent mint keys and epochs.
-- Deposit into Gateway from a fresh address per batch so the purchase is not linkable either.
-- Let the agent place real Gemini orders behind the same approval hook.
+We want to **upstream `blind-credit` into x402** as a mechanism package, and are looking for a **Circle Gateway design partner** to let sellers issue credits directly from Gateway balances, so the batch purchase itself stops being linkable.
