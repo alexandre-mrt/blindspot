@@ -50,3 +50,21 @@ The connecting lines, moving packets, rain and glow are drawn in code (sharper a
 |---|---|
 | `arrow-gold.png` | A single chunky pixel arrowhead pointing right in blockstream gold with a 2-pixel near-black outline. Small subject filling 40% of the canvas. |
 | `arrow-violet.png` | The same chunky pixel arrowhead pointing right in cipher violet with a sky-sync inner highlight. |
+
+## Slide background fillers (for the pixel deck)
+
+These sit behind text at low opacity, so they must be quiet: low contrast, no focal point, nothing that looks like a logo or a word. Prepend this style block instead of the sticker one:
+
+```
+Pixel-art background element on a fully transparent background, crisp nearest-neighbor pixels, no anti-aliasing, no text, no logos, no characters. Palette only: protocol navy #1B3158, validator blue #2F578C, cipher violet #412C5C, sky sync #ACC6E9, blockstream gold #E9A13F used sparingly (under 5% of pixels). Low contrast, calm, decorative, meant to sit behind text at 30% opacity. Fades to transparent toward the open side.
+```
+
+| File | Size | Asset line |
+|---|---|---|
+| `bg-corner-circuit.png` | 1024x1024 | A cluster of thin pixel circuit traces and small square nodes growing from the bottom-left corner toward the center, right-angle turns only, getting sparser and fading out after a third of the canvas. Two or three tiny gold nodes. |
+| `bg-corner-arch.png` | 1024x1024 | Concentric stepped pixel arches (like a doorway seen from the front) anchored in the top-right corner, outlines only, two to three pixels thick, in validator blue and navy, fading toward the bottom-left. |
+| `bg-skyline-strip.png` | 3840x480 | A distant megacity skyline silhouette strip along the bottom edge, flat navy shapes with a few tiny sky-sync window dots, dithered fog fading upward into transparency. Tileable horizontally. |
+| `bg-dither-fog.png` | 1920x1080 | Soft dithered fog patches (ordered Bayer dithering) in navy and cipher violet, drifting diagonally, mostly transparent, no shapes. |
+| `bg-pixel-dust.png` | 1920x1080 | Sparse scattered single pixels and 2x2 pixel specks like distant stars or rain glints, sky sync and validator blue, very sparse (a few hundred specks), slightly denser near the edges. |
+
+Save them in `demo/beamer/img/` with these exact names. I place them in the slide corners and empty space at low opacity.
