@@ -1,29 +1,31 @@
-Your trading agent's wallet is its strategy.
-Blindspot lets an AI agent pay for data on Arc without telling anyone what it bought.
+Quick show of hands in your head: who remembers Théo, the French whale on Polymarket?
+He bet a fortune on Trump in 2024, and half of crypto Twitter spent the election refreshing his wallet. He ended up splitting his bets across several accounts just to get some privacy.
+Now give that same problem to an AI agent. It can't open four accounts. It has one wallet, and it pays for every API call in public.
 ---
-Today, with x402, every call an agent pays for is public. Which feed, how often, and what it did right after.
-Anyone can copy that, or trade before it.
+Here's what that looks like. Our agent buys data, one call at a time, a fraction of a cent each.
+Anyone watching can see what it reads and when. Then they see it trade a few seconds later. You don't need to be smart to copy that, you just need to be fast.
 ---
-So here is what we built. The agent makes one payment of one cent through Circle Gateway, gasless, on Arc. That buys five credits.
+So we built Blindspot. The agent pays once, one cent, through Circle Gateway on Arc. No gas. That gets it five credits.
 ---
-Each credit pays for one call to the seller.
+Then it spends those credits, one per call.
 ---
-The seller knows the call is paid. It has no way to tell who paid, and every feed costs one credit, so it can't tell what you're after either.
-And the agent's spending limits, and my approval, run inside the x402 client.
+And the seller? It knows it got paid. That's all it knows. Not which wallet, not which feed, because every feed costs the same one credit.
+Basically, we gave the agent Théo's four accounts, without the hassle.
 ---
-Let's see it live, on Arc testnet with live Gemini markets. [CLICK: Run agent]
-The unvetted feed gets blocked before anything is signed. [PAUSE: approval card]
-The credits cost more than my auto-approve limit, so it asks me. [CLICK: Approve]
-One Gateway payment, three paid calls, and the seller only sees: anonymous. [PAUSE: the agent's call]
+Let me show you, live on Arc testnet. [CLICK: Run agent]
+First thing, the shady feed gets blocked. The agent never even signs that payment. [PAUSE: approval card]
+The credits cost more than I let it spend alone, so it asks me. [CLICK: Approve]
+One payment through Gateway, then three calls with credits. On the seller side, the payer is just: anonymous. [PAUSE: the agent's call]
+And it comes back with its pick.
 ---
-For the agent, the seller learns nothing but a valid credit, nothing shows up per call, and there's no gas.
+So for the agent, nothing changes on price. What changes is that nobody can watch it shop anymore.
 ---
-The market is already here. More than 250 million agent payments have gone through x402, and the scenario for 2030 is three to five trillion dollars of commerce run by agents.
-Every one of those payments is public today. Sellers pay us a small fee per credit, agents pay the same price.
+And this isn't a niche. Agents already made hundreds of millions of these payments, and the big forecasts talk about trillions by 2030.
+Right now, every single one of them is public. Sellers pay us a small fee per credit to fix that.
 ---
-And the data is worth buying. On 736 Gemini contracts that settled today, our model beat simply reading the spot price. It's overconfident when it's very sure, and we say so.
+Quick sanity check that the data is worth buying: we tested our model on the Gemini markets that settled today, and it beat just reading the price chart. Not magic, just better.
 ---
-Built on Circle Gateway nanopayments, x402 version 2, Arc with USDC as gas, and the Gemini prediction markets API. The blind-credit scheme is ours.
+All of this runs on Circle Gateway, x402, Arc and Gemini's prediction market API. The one piece we added is the credit scheme itself.
 ---
-Next, we want blind-credit in x402 itself, and a Circle Gateway design partner to make the credit purchase private too.
-The code is on GitHub.
+What we want next: get blind-credit into x402 itself, and work with Circle so agents can buy credits straight from their Gateway balance.
+Théo needed four accounts. Your agent just needs Blindspot.
