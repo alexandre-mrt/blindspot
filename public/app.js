@@ -4,6 +4,11 @@ const TONE = {
 	payment_confirmed: "ok",
 	merchant_settled: "ok",
 	briefing: "ok",
+	credits_blinded: "priv",
+	credits_ready: "priv",
+	mint_signed: "priv",
+	credit_spent: "priv",
+	merchant_redeemed: "priv",
 	approval_required: "warn",
 	payment_required: "warn",
 	purchase_failed: "err",
@@ -44,6 +49,16 @@ function summarize(e) {
 			return `bought ${e.id}, total spent ${usd(e.spentUsd)}`;
 		case "decision":
 			return describeDecision(e.decision);
+		case "credits_blinded":
+			return `generated ${e.count} secret serials, blinded them (server sees only 0x${e.preview}…)`;
+		case "mint_signed":
+			return `mint signed ${e.count} blinded tokens without ever seeing their serials`;
+		case "credits_ready":
+			return `unblinded + verified ${e.count} credits, one on-chain deposit of ${usd(e.priceUsd)}`;
+		case "credit_spent":
+			return `spent 1 credit on ${e.resource}: no transaction, ${e.left} left`;
+		case "merchant_redeemed":
+			return `merchant accepted credit #${e.serialTag} for ${e.feed}: cannot link it to any wallet or deposit`;
 		case "briefing":
 			return "briefing ready";
 		case "approval_decision":
@@ -113,6 +128,11 @@ function handle(e) {
 			`Guardrails: per-call cap ${usd(e.policy.perCallMaxUsd)}, human approval above ${usd(e.policy.approvalThresholdUsd)}, allowlist ${e.policy.allowedOrigins.join(", ")}`;
 	}
 	if (e.type === "purchased") $("spent").textContent = usd(e.spentUsd);
+	if (e.type === "credits_ready") $("spent").textContent = usd(e.priceUsd);
+	if (e.type === "payment_confirmed")
+		$("onchain").textContent = String(Number($("onchain").textContent) + 1);
+	if (e.type === "credit_spent")
+		$("offchain").textContent = String(Number($("offchain").textContent) + 1);
 	if (e.type === "approval_required") showApproval(e);
 	if (e.type === "approval_decision" || e.type === "approval_timeout")
 		$(`ap-${e.id}`)?.remove();
@@ -130,11 +150,17 @@ function handle(e) {
 $("run").onclick = async () => {
 	$("run").disabled = true;
 	$("log").textContent = "";
+	$("onchain").textContent = "0";
+	$("offchain").textContent = "0";
+	$("spent").textContent = "$0.000";
 	$("approvals").className = "empty";
 	$("approvals").textContent = "Nothing waiting.";
 	const res = await fetch("/agent/run", {
 		method: "POST",
-		body: JSON.stringify({ goal: $("goal").value }),
+		body: JSON.stringify({
+			goal: $("goal").value,
+			privateMode: $("private").checked,
+		}),
 	});
 	if (!res.ok) $("run").disabled = false;
 };

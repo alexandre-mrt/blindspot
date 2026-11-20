@@ -15,12 +15,15 @@
   <section class="panel control">
     <label for="goal">Agent goal</label>
     <textarea id="goal" rows="2">Find the most mispriced crypto prediction market on Gemini right now and brief me.</textarea>
+    <label class="toggle"><input id="private" type="checkbox" checked /> Private mode: blind-signed credits (Chaumian e-cash)</label>
     <button id="run" type="button">Run agent</button>
     <div class="stats">
-      <div><span class="k">Wallet</span><a id="wallet" href="#" target="_blank">-</a></div>
+      <div><span class="k">Wallet</span><a id="wallet" href="https://testnet.arcscan.app" target="_blank">-</a></div>
       <div><span class="k">Balance</span><span id="balance">-</span></div>
       <div><span class="k">Spent</span><span id="spent">$0.000</span></div>
       <div><span class="k">Budget</span><span id="budget">-</span></div>
+      <div><span class="k">On-chain payments</span><span id="onchain">0</span></div>
+      <div><span class="k">Private requests</span><span id="offchain">0</span></div>
     </div>
     <div id="policy" class="policy"></div>
   </section>
