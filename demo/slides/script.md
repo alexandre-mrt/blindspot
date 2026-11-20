@@ -1,3 +1,5 @@
+Hi, and thanks for taking a few minutes to watch this. I'll keep it quick and to the point.
+Let's start with a story we've all lived.
 Everyone has a spot like this. A quiet beach, a little restaurant, a cheap flight trick. You tell one friend. Next summer, the beach is packed.
 A good tip is only worth something while nobody else knows it.
 AI agents have the same problem, except they can't keep anything to themselves. Every time they pay for something, it's public.
