@@ -9,7 +9,7 @@
 <body>
 <header>
   <div class="brand"><span class="dot"></span> ODDS DESK</div>
-  <div class="tag">An AI agent that pays per request in USDC on Arc for Gemini prediction-market signals</div>
+  <div class="tag">An AI agent paying per request with x402 + Circle Gateway nanopayments on Arc, privately, for Gemini prediction-market signals</div>
 </header>
 <main>
   <section class="panel control">
@@ -19,11 +19,11 @@
     <button id="run" type="button">Run agent</button>
     <div class="stats">
       <div><span class="k">Wallet</span><a id="wallet" href="https://testnet.arcscan.app" target="_blank">-</a></div>
-      <div><span class="k">Balance</span><span id="balance">-</span></div>
+      <div><span class="k">Gateway balance</span><span id="balance">-</span></div>
       <div><span class="k">Spent</span><span id="spent">$0.000</span></div>
       <div><span class="k">Budget</span><span id="budget">-</span></div>
-      <div><span class="k">On-chain payments</span><span id="onchain">0</span></div>
-      <div><span class="k">Private requests</span><span id="offchain">0</span></div>
+      <div><span class="k">Gasless nanopayments</span><span id="onchain">0</span></div>
+      <div><span class="k">Blind-credit payments</span><span id="offchain">0</span></div>
     </div>
     <div id="policy" class="policy"></div>
   </section>

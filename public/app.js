@@ -1,8 +1,8 @@
 const EXPLORER = "https://testnet.arcscan.app";
 const TONE = {
-	purchased: "ok",
-	payment_confirmed: "ok",
+	payment_settled: "ok",
 	merchant_settled: "ok",
+	gateway_deposit: "ok",
 	briefing: "ok",
 	credits_blinded: "priv",
 	credits_ready: "priv",
@@ -10,7 +10,6 @@ const TONE = {
 	credit_spent: "priv",
 	merchant_redeemed: "priv",
 	approval_required: "warn",
-	payment_required: "warn",
 	purchase_failed: "err",
 	error: "err",
 	approval_timeout: "err",
@@ -30,23 +29,23 @@ function link(url, text) {
 function summarize(e) {
 	switch (e.type) {
 		case "start":
-			return `agent ${e.agent.slice(0, 10)}… balance ${usd(e.balanceUsd)} USDC`;
+			return `agent ${e.agent.slice(0, 10)}… on Arc testnet, private mode ${e.privateMode ? "ON" : "OFF"}`;
+		case "gateway_balance":
+			return `Circle Gateway balance ${usd(e.availableUsd)} USDC (wallet ${usd(e.walletUsd)})`;
+		case "gateway_deposit":
+			return `deposited ${e.amountUsd} USDC into Circle Gateway (one on-chain tx)`;
 		case "catalog":
 			return `discovered ${e.items.length} paid feeds: ${e.items.map((i) => `${i.id} (${usd(i.priceUsd)})`).join(", ")}`;
 		case "plan":
 			return `${e.planner} planner chose: ${e.ids.join(", ")}`;
 		case "policy":
-			return `${e.id} ${usd(e.priceUsd)} → ${e.verdict.toUpperCase()}${e.reason ? ` (${e.reason})` : ""}`;
-		case "payment_required":
-			return `HTTP 402 for ${e.resource.split("/").pop()}: pay ${usd(e.priceUsd)} to ${e.payTo.slice(0, 10)}…`;
-		case "payment_sent":
-			return `USDC transfer sent ${e.txHash.slice(0, 14)}…`;
-		case "payment_confirmed":
-			return `confirmed in block ${e.block}`;
+			return `${new URL(e.resource).pathname}${e.credit ? " (1 credit)" : ""} ${usd(e.priceUsd)} → ${e.verdict.toUpperCase()}${e.reason ? ` (${e.reason})` : ""}`;
+		case "payment_signed":
+			return `x402 ${e.scheme} payment signed off-chain via Circle Gateway: no gas, no tx`;
+		case "payment_settled":
+			return `nanopayment ${usd(e.priceUsd)} settled by Circle facilitator (batch ${e.settlement.slice(0, 8)}…), total ${usd(e.spentUsd)}`;
 		case "merchant_settled":
-			return `merchant verified on-chain payment for ${e.feed}`;
-		case "purchased":
-			return `bought ${e.id}, total spent ${usd(e.spentUsd)}`;
+			return `merchant received ${Number(e.amount) / 1e6} USDC via Gateway batch`;
 		case "decision":
 			return describeDecision(e.decision);
 		case "credits_blinded":
@@ -54,11 +53,11 @@ function summarize(e) {
 		case "mint_signed":
 			return `mint signed ${e.count} blinded tokens without ever seeing their serials`;
 		case "credits_ready":
-			return `unblinded + verified ${e.count} credits, one on-chain deposit of ${usd(e.priceUsd)}`;
+			return `unblinded + verified ${e.count} credits, paid with one ${usd(e.priceUsd)} Gateway nanopayment`;
 		case "credit_spent":
-			return `spent 1 credit on ${e.resource}: no transaction, ${e.left} left`;
+			return `x402 blind-credit payment for ${e.resource}: no signature from the wallet, ${e.left} left`;
 		case "merchant_redeemed":
-			return `merchant accepted credit #${e.serialTag} for ${e.feed}: cannot link it to any wallet or deposit`;
+			return `merchant redeemed credit #${e.serialTag}: payer = anonymous, unlinkable to any wallet or deposit`;
 		case "briefing":
 			return "briefing ready";
 		case "approval_decision":
@@ -122,15 +121,16 @@ function handle(e) {
 	if (e.type === "start") {
 		$("wallet").textContent = e.agent;
 		$("wallet").href = `${EXPLORER}/address/${e.agent}`;
-		$("balance").textContent = usd(e.balanceUsd);
 		$("budget").textContent = usd(e.policy.sessionBudgetUsd);
 		$("policy").textContent =
-			`Guardrails: per-call cap ${usd(e.policy.perCallMaxUsd)}, human approval above ${usd(e.policy.approvalThresholdUsd)}, allowlist ${e.policy.allowedOrigins.join(", ")}`;
+			`Guardrails (x402 onBeforePaymentCreation hook): per-call cap ${usd(e.policy.perCallMaxUsd)}, human approval above ${usd(e.policy.approvalThresholdUsd)}, allowlist ${e.policy.allowedOrigins.join(", ")}`;
 	}
-	if (e.type === "purchased") $("spent").textContent = usd(e.spentUsd);
-	if (e.type === "credits_ready") $("spent").textContent = usd(e.priceUsd);
-	if (e.type === "payment_confirmed")
+	if (e.type === "gateway_balance")
+		$("balance").textContent = usd(e.availableUsd);
+	if (e.type === "payment_settled") {
+		$("spent").textContent = usd(e.spentUsd);
 		$("onchain").textContent = String(Number($("onchain").textContent) + 1);
+	}
 	if (e.type === "credit_spent")
 		$("offchain").textContent = String(Number($("offchain").textContent) + 1);
 	if (e.type === "approval_required") showApproval(e);
@@ -139,7 +139,6 @@ function handle(e) {
 	if (e.type === "briefing") {
 		$("briefing").classList.remove("empty");
 		$("briefing").textContent = e.text;
-		$("balance").textContent = usd(e.balanceUsd);
 		if ("speechSynthesis" in window) {
 			speechSynthesis.speak(new SpeechSynthesisUtterance(e.text));
 		}
