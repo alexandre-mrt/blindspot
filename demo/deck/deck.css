@@ -1,0 +1,277 @@
+:root {
+  --ink: #0e1116;
+  --panel: #161b22;
+  --line: #2a323d;
+  --paper: #e8edf2;
+  --soft: #a9b4c0;
+  --mint: #3ddc97;
+  --amber: #f5a524;
+}
+body {
+  font-family: "IBM Plex Sans", Arial, sans-serif;
+  color: var(--paper);
+}
+section {
+  padding: 128px 128px 160px;
+  background: var(--ink);
+  box-sizing: border-box;
+}
+.eyebrow {
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 24px;
+  color: var(--mint);
+  letter-spacing: 2px;
+  margin: 0 0 16px;
+}
+.title {
+  font-size: 72px;
+  font-weight: 700;
+  line-height: 1.08;
+  margin: 0 0 48px;
+  color: var(--paper);
+}
+.title .hi {
+  color: var(--mint);
+}
+.cols {
+  display: flex;
+  gap: 96px;
+}
+.left {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: 860px;
+}
+.right {
+  display: flex;
+  flex-direction: column;
+  width: 708px;
+}
+.label {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--soft);
+  margin: 0 0 8px;
+}
+.bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bar-line {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.bar {
+  height: 44px;
+  border-radius: 6px;
+  animation: grow 700ms ease-out both;
+  transform-origin: left center;
+}
+.bar.model {
+  background: var(--mint);
+  width: 314px;
+}
+.bar.naive {
+  background: var(--amber);
+  width: 426px;
+  animation-delay: 120ms;
+}
+.bar.coin {
+  background: var(--line);
+  width: 700px;
+  animation-delay: 240ms;
+}
+.num {
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0;
+}
+.bar-name {
+  font-size: 26px;
+  color: var(--soft);
+  margin: 0;
+}
+.caption {
+  font-size: 24px;
+  color: var(--soft);
+  margin: 8px 0 0;
+}
+.calib {
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 26px;
+  color: var(--paper);
+}
+.note {
+  font-size: 24px;
+  color: var(--soft);
+  margin: 20px 0 0;
+}
+.note b {
+  color: var(--amber);
+}
+.footer {
+  position: absolute;
+  left: 128px;
+  bottom: 64px;
+  width: 1664px;
+  font-size: 24px;
+  color: var(--soft);
+  margin: 0;
+}
+@keyframes grow {
+  from {
+    transform: scaleX(0.02);
+    opacity: 0;
+  }
+}
+.cover .title {
+  font-size: 96px;
+  max-width: 1500px;
+  margin-bottom: 40px;
+}
+.sub {
+  font-size: 40px;
+  color: var(--soft);
+  margin: 0;
+}
+.sub b {
+  color: var(--paper);
+}
+.cards {
+  display: flex;
+  gap: 32px;
+}
+.card {
+  flex: 1;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  padding: 36px;
+}
+.card h3 {
+  font-size: 40px;
+  margin: 0 0 16px;
+  color: var(--paper);
+}
+.card p {
+  font-size: 28px;
+  line-height: 1.4;
+  color: var(--soft);
+  margin: 0;
+}
+.card .tagline {
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 24px;
+  color: var(--mint);
+  margin: 0 0 12px;
+}
+.card.gold .tagline {
+  color: var(--amber);
+}
+.flow {
+  display: flex;
+  align-items: stretch;
+  gap: 24px;
+}
+.step {
+  flex: 1;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  padding: 28px;
+}
+.step .n {
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 24px;
+  color: var(--mint);
+  margin: 0 0 12px;
+}
+.step h3 {
+  font-size: 34px;
+  margin: 0 0 12px;
+  color: var(--paper);
+}
+.step p {
+  font-size: 26px;
+  line-height: 1.35;
+  color: var(--soft);
+  margin: 0;
+}
+.insight {
+  margin: 44px 0 0;
+  font-size: 32px;
+  color: var(--paper);
+}
+.insight b {
+  color: var(--mint);
+}
+.watch {
+  display: flex;
+  gap: 32px;
+  margin-top: 24px;
+}
+.watch p {
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 34px;
+  padding: 20px 32px;
+  border-radius: 12px;
+  margin: 0;
+}
+.w-denied {
+  background: #3a1712;
+  color: #ff8a73;
+}
+.w-approved {
+  background: #3a2a0d;
+  color: var(--amber);
+}
+.w-anon {
+  background: #1d1533;
+  color: #c9a7ff;
+}
+.stack {
+  font-size: 28px;
+  color: var(--paper);
+}
+.big {
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 120px;
+  font-weight: 700;
+  color: var(--mint);
+  margin: 0;
+  line-height: 1;
+}
+.big-caption {
+  font-size: 30px;
+  color: var(--soft);
+  margin: 12px 0 0;
+}
+.ask-line {
+  font-size: 52px;
+  font-weight: 700;
+  color: var(--paper);
+  margin: 0 0 28px;
+  line-height: 1.2;
+}
+.ask-line .hi {
+  color: var(--mint);
+}
+.link {
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 32px;
+  color: var(--amber);
+  margin: 40px 0 0;
+}
+.fragment {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 400ms ease-out, transform 400ms ease-out;
+}
+.fragment.visible {
+  opacity: 1;
+  transform: translateY(0);
+}

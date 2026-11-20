@@ -1,0 +1,36 @@
+<section id="backtest">
+<p class="eyebrow">BACKTEST · 736 SETTLED GEMINI CONTRACTS · LAST 24H</p>
+<h2 class="title">The agent’s model forecasts outcomes <span class="hi">26% better</span> than reading the spot price</h2>
+<div class="cols">
+<div class="left">
+<p class="label">Brier score, 60 min before expiry (lower is better)</p>
+<div class="bar-row">
+<p class="bar-name">Odds Desk volatility model</p>
+<div class="bar-line"><div class="bar model"></div><p class="num">0.112</p></div>
+</div>
+<div class="bar-row">
+<p class="bar-name">Naive: “spot already past the strike”</p>
+<div class="bar-line"><div class="bar naive"></div><p class="num">0.152</p></div>
+</div>
+<div class="bar-row">
+<p class="bar-name">Coin flip</p>
+<div class="bar-line"><div class="bar coin"></div><p class="num">0.250</p></div>
+</div>
+<p class="caption">On the 222 contested contracts (model between 10% and 90%): 0.217 vs 0.342 naive.</p>
+</div>
+<div class="right">
+<p class="label">Calibration: predicted vs what happened</p>
+<table class="calib">
+<tr><th style="width:40%">Model says</th><th style="width:30%;text-align:right">Avg</th><th style="width:30%;text-align:right">Realized</th></tr>
+<tr><td>0–20%</td><td style="text-align:right">3%</td><td style="text-align:right">3%</td></tr>
+<tr><td>20–40%</td><td style="text-align:right">30%</td><td style="text-align:right">27%</td></tr>
+<tr><td>40–60%</td><td style="text-align:right">49%</td><td style="text-align:right">42%</td></tr>
+<tr><td>60–80%</td><td style="text-align:right">70%</td><td style="text-align:right">60%</td></tr>
+<tr><td>80–100%</td><td style="text-align:right">97%</td><td style="text-align:right">87%</td></tr>
+</table>
+<p class="note"><b>Honest limit:</b> overconfident at the top, the fat tails that 2h realized volatility misses. Gemini publishes no contract price history, so P&amp;L vs the book is tested forward, live.</p>
+</div>
+</div>
+<p class="footer">84 BTC, ETH, SOL, XRP, ZEC, HYPE hourly strike ladders · Gemini recently-settled API + Lukka settlement-index klines · reproducible: bun backtest/calibration.ts</p>
+<aside>Lead with the headline number: 0.112 against 0.152. Then the honest part: the model is overconfident at the top, which is why the agent only acts on edges above five points and sizes small. Gemini does not publish historical contract prices, so the P&amp;L test against the order book is a live forward test.</aside>
+</section>

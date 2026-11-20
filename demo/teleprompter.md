@@ -21,15 +21,14 @@ Step four: the seller checks the signature and that the credit is unspent. It kn
 Money moves once, publicly. Access is proven many times, privately.
 ---
 Let me show you. Three things to watch: denied, approved, and payer anonymous.
-[DEMO: switch to the Odds Desk dashboard]
-Private mode is on. [CLICK: Run agent]
+---
+This is the live agent, on Arc testnet, on live Gemini data. Private mode is on. [CLICK: Run agent]
 The agent finds four paid Gemini feeds. The whale feed sits on an unvetted origin, so our policy, running inside the x402 hook, refuses it before anything is signed.
 [PAUSE: wait for the approval card]
 The credit batch costs one cent, above my auto-approve limit, so it asks me. [CLICK: Approve]
 Gasless nanopayment through Circle Gateway. The mint signs blind. And now three paid requests: zero transactions, and the seller only sees: anonymous.
 [PAUSE: wait for the agent call]
 And the agent makes its call.
-[DEMO: switch back to the slides]
 ---
 Is the signal worth paying for? On seven hundred thirty six settled Gemini contracts, our model beats the naive read by twenty six percent. And we show where it is overconfident.
 ---
