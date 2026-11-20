@@ -6,3 +6,4 @@ demo/node_modules
 demo/videos
 demo/.argo
 demo/test-results
+.cursor/
