@@ -1,10 +1,10 @@
 # Odds Desk
 
-An AI research agent that **buys prediction-market intelligence per request**, paying in **USDC on Arc** through an **x402** paywall, under hard spending guardrails, then briefs you **by voice with ElevenLabs**.
+An AI research agent that **buys prediction-market intelligence per request**, paying in **USDC on Arc** through an **x402** paywall, under hard spending guardrails, then delivers a spoken trade briefing.
 
 - **Main track:** Agentic Payments and AI
 - **Chain award:** Best use of Arc
-- **Bounties:** Gemini Prediction Markets, ElevenLabs
+- **Bounty:** Gemini Prediction Markets
 
 ## The problem
 
@@ -23,7 +23,7 @@ Agents that pay for data are only useful if (1) the data is worth paying for and
    │                                                         Transfer(payer → merchant ≥ price),
    │ ◄──────────────────── signal data ──────────────────── success, fresh, not replayed
    │ decide (edge / arb / hold, paper stake)
-   └ briefing text → ElevenLabs TTS → dashboard audio
+   └ briefing text → dashboard (read aloud by the browser)
 ```
 
 ### Paid feeds (sold by the Odds Desk API)
@@ -43,7 +43,7 @@ The catalog also lists an unvetted third-party feed (`whale-alpha`, $0.50) so th
 3. **Guard**: each purchase goes through `policy.evaluate()` (see below).
 4. **Pay**: on HTTP 402, pay the exact `maxAmountRequired` in USDC on Arc, wait for the receipt, retry with the `X-PAYMENT` proof.
 5. **Decide**: a ladder arbitrage wins if any. Otherwise take the highest-edge contract, paper stake = min(10% of a $100 bankroll, bankroll × edge). Otherwise hold. Odds Desk never places real Gemini orders.
-6. **Brief**: a short spoken briefing (LLM or template) voiced by ElevenLabs and played on the dashboard.
+6. **Brief**: a short briefing (LLM or template) shown and read aloud on the dashboard.
 
 Every step is streamed to the dashboard (SSE) with Arcscan links for each payment.
 
@@ -74,6 +74,13 @@ Arc is Circle's stablecoin L1 where **USDC is the gas token**, so the agent hold
 
 No custom contract is deployed: the protocol composes with Arc's native USDC.
 
+Example run (Arc testnet, three x402 payments, $0.08 total):
+
+- snapshot $0.01: [0xc4d9c7cf…](https://testnet.arcscan.app/tx/0xc4d9c7cf6ff78a8f86d9242a5451268a127649488bbec18d2196f600c9f1e974)
+- arb $0.02: [0x8ac3669c…](https://testnet.arcscan.app/tx/0x8ac3669c966e537ee7e77fc910d393957833747e833fd992e2c57f6b5146da0d)
+- edge $0.05, human-approved: [0xe3b9165e…](https://testnet.arcscan.app/tx/0xe3b9165e10721b03b2122189ab391415b849834d04221b44df426b6ff35b9e67)
+- whale-alpha $0.50: denied by the origin allowlist, never paid
+
 ## How it uses Gemini Prediction Markets
 
 - `GET /v1/prediction-markets/events?status=active&category=Crypto` for events, contracts, strikes, expiries and `bestBid`/`bestAsk`.
@@ -81,15 +88,11 @@ No custom contract is deployed: the protocol composes with Arc's native USDC.
 
 Market data only; no trading keys required.
 
-## How it uses ElevenLabs
-
-Text-to-Speech API (`/v1/text-to-speech/{voice_id}`, model `eleven_flash_v2_5`) voices the agent's final briefing, so the desk "speaks" its call and what it spent. The audio plays automatically when the run ends.
-
 ## Run it
 
 ```bash
 bun install
-cp .env.example .env   # fill AGENT_PRIVATE_KEY, MERCHANT_ADDRESS, ELEVENLABS_API_KEY (ANTHROPIC_API_KEY optional)
+cp .env.example .env   # fill AGENT_PRIVATE_KEY, MERCHANT_ADDRESS (ANTHROPIC_API_KEY optional)
 # fund the agent address with testnet USDC: https://faucet.circle.com (Arc Testnet)
 bun run start          # http://localhost:4021
 bun test
@@ -106,7 +109,6 @@ bun test
 | `src/agent/agent.ts` | Decision loop |
 | `src/agent/policy.ts` | Spend guardrails |
 | `src/agent/pay-client.ts` | x402 client paying USDC on Arc |
-| `src/voice.ts` | ElevenLabs TTS |
 | `public/` | Dashboard |
 
 ## What's next
