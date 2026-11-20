@@ -1,10 +1,8 @@
-import { txUrl } from "../chain";
 import { emit } from "../events";
 import type { ArbSignal, EdgeSignal } from "../signals";
-import { requestApproval } from "./approvals";
 import { createCreditWallet } from "./credit-wallet";
+import { createGatewayPayer } from "./gateway-payer";
 import { complete } from "./llm";
-import { createPayer } from "./pay-client";
 import { defaultPolicy, evaluate } from "./policy";
 
 export type CatalogItem = {
@@ -17,6 +15,7 @@ export type CatalogItem = {
 
 const PAPER_BANKROLL_USD = 100;
 const MAX_STAKE_FRACTION = 0.1;
+const CREDIT_UNIT_USD = 0.002;
 
 type Decision =
 	| { kind: "hold" }
@@ -71,68 +70,42 @@ function templateBriefing(decision: Decision, spentUsd: number): string {
 	return `On ${s.event}, ${s.contract}: the market prices yes at ${(s.mid * 100).toFixed(0)} percent, my volatility model says ${(s.modelProb * 100).toFixed(0)} percent. I would buy ${side} with ${decision.stakeUsd} dollars of paper capital, an edge of ${(s.edge * 100).toFixed(0)} points. ${cost}`;
 }
 
-async function buyFeeds(
-	payer: ReturnType<typeof createPayer>,
-	items: CatalogItem[],
-) {
+type Payer = ReturnType<typeof createGatewayPayer>;
+
+const GATEWAY_MIN_USD = 0.05;
+const GATEWAY_TOP_UP_USD = "0.5";
+
+async function buyFeeds(payer: Payer, items: CatalogItem[]) {
 	const bought: Record<string, unknown> = {};
-	let spentUsd = 0;
 	for (const item of items) {
-		const decision = evaluate(defaultPolicy, item.url, item.priceUsd, spentUsd);
-		emit("policy", { id: item.id, priceUsd: item.priceUsd, ...decision });
-		if (decision.verdict === "deny") continue;
-		const approver = async () =>
-			decision.verdict === "allow" ||
-			(await requestApproval({
-				resource: item.id,
-				priceUsd: item.priceUsd,
-				reason: decision.reason,
-			}));
 		try {
-			const result = await payer.fetchPaid<unknown>(item.url, approver);
-			spentUsd += result.priceUsd;
-			bought[item.id] = result.data;
-			emit("purchased", {
-				id: item.id,
-				txHash: result.txHash,
-				url: txUrl(result.txHash),
-				spentUsd,
-			});
+			bought[item.id] = (await payer.pay<unknown>(item.url)).data;
 		} catch (err) {
 			emit("purchase_failed", { id: item.id, error: (err as Error).message });
 		}
 	}
-	return { bought, spentUsd };
+	return bought;
 }
 
 async function buyFeedsPrivately(
-	payer: ReturnType<typeof createPayer>,
+	payer: Payer,
 	items: CatalogItem[],
 	origin: string,
 ) {
 	const credits = createCreditWallet(origin);
-	await credits.load();
-	const creditUsd = credits.priceUsd();
 	const eligible = items.filter((item) => {
-		const decision = evaluate(defaultPolicy, item.url, item.priceUsd, 0);
-		emit("policy", { id: item.id, priceUsd: item.priceUsd, ...decision });
+		const decision = evaluate(defaultPolicy, item.url, CREDIT_UNIT_USD, 0);
+		emit("policy", {
+			resource: item.url,
+			priceUsd: CREDIT_UNIT_USD,
+			credit: true,
+			...decision,
+		});
 		return decision.verdict !== "deny";
 	});
 	const bought: Record<string, unknown> = {};
-	if (eligible.length === 0) return { bought, spentUsd: 0 };
-	const depositUsd = Number((eligible.length * creditUsd).toFixed(6));
-	const depositUrl = `${origin}/credits/issue`;
-	const decision = evaluate(defaultPolicy, depositUrl, depositUsd, 0);
-	emit("policy", { id: "credit-deposit", priceUsd: depositUsd, ...decision });
-	if (decision.verdict === "deny") return { bought, spentUsd: 0 };
-	const approver = async () =>
-		decision.verdict === "allow" ||
-		(await requestApproval({
-			resource: `${eligible.length} private credits`,
-			priceUsd: depositUsd,
-			reason: decision.reason,
-		}));
-	const spentUsd = await credits.buy(payer, eligible.length, approver);
+	if (eligible.length === 0) return bought;
+	await credits.buyBatch(payer);
 	for (const item of eligible) {
 		try {
 			bought[item.id] = await credits.spend<unknown>(item.url);
@@ -140,22 +113,22 @@ async function buyFeedsPrivately(
 			emit("purchase_failed", { id: item.id, error: (err as Error).message });
 		}
 	}
-	return { bought, spentUsd };
+	return bought;
 }
 
 export async function runAgent(opts: {
-	privateKey: string;
+	privateKey: `0x${string}`;
 	catalogUrl: string;
 	goal: string;
 	privateMode: boolean;
 }) {
-	const payer = createPayer(opts.privateKey);
+	const payer = createGatewayPayer(opts.privateKey, defaultPolicy);
 	emit("start", {
 		agent: payer.address,
-		balanceUsd: await payer.balanceUsd(),
 		policy: defaultPolicy,
 		privateMode: opts.privateMode,
 	});
+	await payer.ensureDeposit(GATEWAY_MIN_USD, GATEWAY_TOP_UP_USD);
 
 	const catalog = (await (
 		await fetch(opts.catalogUrl)
@@ -163,9 +136,10 @@ export async function runAgent(opts: {
 	emit("catalog", { items: catalog });
 	const chosenIds = await plan(opts.goal, catalog);
 	const chosen = catalog.filter((c) => chosenIds.has(c.id));
-	const { bought, spentUsd } = opts.privateMode
+	const bought = opts.privateMode
 		? await buyFeedsPrivately(payer, chosen, new URL(opts.catalogUrl).origin)
 		: await buyFeeds(payer, chosen);
+	const spentUsd = payer.spent();
 
 	const edges =
 		(bought.edge as { signals?: EdgeSignal[] } | undefined)?.signals ?? [];
@@ -179,10 +153,6 @@ export async function runAgent(opts: {
 		`Decision: ${JSON.stringify(decision)}. Research spend: $${spentUsd.toFixed(3)} USDC on Arc.`,
 	).catch(() => null);
 	const briefing = llmBriefing ?? templateBriefing(decision, spentUsd);
-	emit("briefing", {
-		text: briefing,
-		spentUsd,
-		balanceUsd: await payer.balanceUsd(),
-	});
+	emit("briefing", { text: briefing, spentUsd });
 	emit("done", {});
 }
