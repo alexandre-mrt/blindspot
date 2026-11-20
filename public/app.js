@@ -229,8 +229,6 @@ function updateState(e) {
 	if (e.type === "briefing") {
 		$("briefing").classList.remove("empty");
 		$("briefing").textContent = e.text;
-		if (window.speechSynthesis)
-			window.speechSynthesis.speak(new SpeechSynthesisUtterance(e.text));
 	}
 	if (e.type === "done" || e.type === "error") $("run").disabled = false;
 }
