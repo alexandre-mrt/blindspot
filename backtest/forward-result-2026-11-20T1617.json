@@ -1,0 +1,11 @@
+{
+	"capturedAt": "2026-11-20T16:17:41.223Z",
+	"rule": "take every signal with edge >= 5 pts, 1 contract at the quoted ask (YES) or 1 - bid (NO)",
+	"settled": 0,
+	"pending": 51,
+	"hitRate": null,
+	"stakedUsd": 0,
+	"pnlUsd": 0,
+	"roi": null,
+	"trades": []
+}
