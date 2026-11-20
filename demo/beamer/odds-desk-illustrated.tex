@@ -1,0 +1,291 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usetheme{default}
+\usefonttheme{professionalfonts}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{\hfill\insertframenumber\,/\,\inserttotalframenumber\hspace{1em}\vspace{0.6em}}
+\definecolor{arcblue}{HTML}{2F578C}
+\definecolor{arcgold}{HTML}{E9A13F}
+\definecolor{arcviolet}{HTML}{664C88}
+\definecolor{termbg}{HTML}{1B1F27}
+\definecolor{termbar}{HTML}{2A303B}
+\setbeamercolor{frametitle}{fg=arcblue}
+\setbeamercolor{title}{fg=arcblue}
+\setbeamercolor{itemize item}{fg=arcblue}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage[most]{tcolorbox}
+\graphicspath{{img/}}
+
+\newtcolorbox{term}[1][0.47\textwidth]{
+  enhanced, width=#1, arc=1.5mm, boxrule=0pt, colback=termbg, coltext=white,
+  colbacktitle=termbar, title={\textcolor{red!65}{\tiny$\bullet$}\,\textcolor{yellow!75}{\tiny$\bullet$}\,\textcolor{green!60}{\tiny$\bullet$}},
+  toptitle=0.3mm, bottomtitle=0.3mm, left=2mm, right=2mm, top=1mm, bottom=1mm,
+  fontupper=\ttfamily\scriptsize
+}
+\newcommand{\cmd}[1]{\textcolor{arcgold}{\$}~#1\par}
+\newcommand{\out}[1]{\textcolor{gray!70}{#1}\par}
+\newcommand{\sprite}[2][1.4cm]{\includegraphics[height=#1]{#2}}
+\newcommand{\node}[3][1.4cm]{\begin{tabular}{@{}c@{}}\sprite[#1]{#2}\\[-1pt]{\scriptsize #3}\end{tabular}}
+\newcommand{\arr}[1]{\raisebox{0.6cm}{$\xrightarrow{\text{\scriptsize #1}}$}}
+
+\title{Unlinkable per-request payments for AI agents}
+\subtitle{Blind-signed credits as an x402 payment scheme, settled with Circle Gateway on Arc}
+\author{Alexandre Mourot}
+\institute{EPFL \\ UBC Hackathon 2026, Agentic Payments track}
+\date{20 November 2026}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+  \vspace{-0.6cm}
+  \centering
+  \sprite[1.1cm]{agent}\hspace{0.6cm}\sprite[1.1cm]{gateway}\hspace{0.6cm}\sprite[1.1cm]{mint}\hspace{0.6cm}\sprite[1.1cm]{merchant}
+\end{frame}
+
+\begin{frame}{Motivation}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{itemize}
+        \item With x402 an agent pays for each API call with a stablecoin payment.
+        \item Each payment shows payer, payee, amount and time.
+        \item For an agent buying market data, that history is its strategy.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \centering
+      \node{agent}{agent}\arr{\$0.005}\node{merchant}{seller}\\[2mm]
+      \node[1cm]{whale}{anyone reading the chain}
+    \end{column}
+  \end{columns}
+  \pause
+  \vspace{0.8em}
+  \textbf{Question.} Can the agent keep paying per request while the seller can no longer tell which agent made which request?
+\end{frame}
+
+\begin{frame}{Setting and threat model}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \begin{itemize}
+        \item Agent $A$ buys data from seller $S$, who also runs the mint.
+        \item Settlement: Circle Gateway on Arc, USDC as gas.
+        \item $S$ is honest but curious.
+        \item Out of scope: IP address and timing.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \centering
+      \node{agent}{$A$}\hspace{2mm}\node{merchant}{$S$}\hspace{2mm}\node{mint}{mint}\\[2mm]
+      \node{gateway}{Gateway on Arc}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Background}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \textbf{x402.} \texttt{402}, then a signed payment, then a facilitator settles it.
+      \medskip
+
+      \textbf{Gateway nanopayments.} One deposit on-chain, then off-chain authorizations settled in batches.
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \begin{term}[\linewidth]
+        \cmd{curl -i localhost:4021/api/feeds/edge}
+        \out{HTTP/1.1 402 Payment Required}
+        \out{accepts: exact (Gateway), blind-credit}
+      \end{term}
+    \end{column}
+  \end{columns}
+  \pause
+  \medskip
+  \textbf{Blind RSA signatures} (Chaum, 1983), key $(N,e,d)$, hash $H$ onto $\mathbb{Z}_N$:\hfill\sprite[1cm]{blinded}
+  \[
+    b = H(s)\, r^{e} \bmod N, \qquad s' = b^{d} \bmod N, \qquad \sigma = s'\, r^{-1} = H(s)^{d} \bmod N.
+  \]
+\end{frame}
+
+\begin{frame}{Construction}
+  \centering
+  \node[1.2cm]{agent}{agent}\arr{$b_1..b_5$ + \$0.01}\node[1.2cm]{mint}{mint}\arr{$b_i^d$}\node[1.2cm]{credit}{5 credits}
+  \raggedright
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \textbf{Issuance.} Blind five serials, pay one Gateway nanopayment, unblind, check $\sigma_i^e = H(s_i)$.
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \begin{term}[\linewidth]
+        \cmd{POST /credits/issue}
+        \out{gateway: \$0.01 signed off-chain, no gas}
+        \out{mint: signed 5 blinded values}
+      \end{term}
+    \end{column}
+  \end{columns}
+  \pause
+  \vspace{2mm}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \textbf{Redemption.} Pay each request with $(s_i,\sigma_i)$ under the scheme \texttt{blind-credit}; $S$ checks the signature and that $s_i$ is unspent.
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \begin{term}[\linewidth]
+        \cmd{GET /api/feeds/edge  (blind-credit)}
+        \out{200 OK   payer = anonymous}
+      \end{term}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Properties and limits}
+  \begin{columns}[T]
+    \begin{column}{0.74\textwidth}
+      \small
+      \begin{tabular}{@{}ll@{}}
+        \toprule
+        Property & Argument \\
+        \midrule
+        Unlinkability & $S$ saw only $b_i$; $(s_i,\sigma_i)$ is new to it \\
+        Unforgeability & one-more RSA (Bellare et al., 2003) \\
+        No double spending & spent-serial set \\
+        Price privacy & every resource costs one credit \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.22\textwidth}
+      \centering
+      \sprite[1.8cm]{mask}
+    \end{column}
+  \end{columns}
+  \bigskip
+
+  \textbf{Limits.} The batch purchase is linkable to $A$. Timing and IP are not hidden. The mint key is kept in memory.
+\end{frame}
+
+\begin{frame}{Spending policy}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      The policy runs in the x402 hook \texttt{onBeforePaymentCreation}: a refused payment is never signed.
+      \begin{itemize}
+        \item origin allowlist
+        \item \$0.01 per call, \$0.05 per session
+        \item my approval above \$0.004
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \centering
+      \sprite[1.3cm]{shield}\hspace{3mm}\sprite[1cm]{stamp-denied}\hspace{2mm}\sprite[1cm]{stamp-approved}\\[2mm]
+      \begin{term}[\linewidth]
+        \cmd{policy 127.0.0.1/api/feeds/whale \$0.50}
+        \out{DENY origin not on allowlist}
+        \cmd{policy /credits/issue \$0.01}
+        \out{NEEDS\_APPROVAL above \$0.004}
+      \end{term}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Demonstration}
+  \centering
+  \vfill
+  \node{agent}{agent}\hspace{4mm}\node{gateway}{Gateway}\hspace{4mm}\node{mint}{mint}\hspace{4mm}\node{merchant}{seller}\hspace{4mm}\node{oracle}{Gemini}
+  \vfill
+  Live run on Arc testnet with live Gemini Prediction Markets data.
+  \vfill
+\end{frame}
+
+\begin{frame}{Evaluation: is the purchased signal informative?}
+  \begin{columns}[T]
+    \begin{column}{0.62\textwidth}
+      84 Gemini crypto ladders settled in the last 24 h, 736 contracts, priced 60 min before expiry.
+      \medskip
+
+      \small
+      \begin{tabular}{@{}lcc@{}}
+        \toprule
+        Forecaster & all & $p\in(0.1,0.9)$ \\
+        \midrule
+        Lognormal, 2\,h realized vol. & \textbf{0.112} & \textbf{0.217} \\
+        Spot past the strike & 0.152 & 0.342 \\
+        Constant 0.5 & 0.250 & 0.250 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.35\textwidth}
+      \begin{term}[\linewidth]
+        \cmd{bun backtest/calibration.ts}
+        \out{events 84  contracts 736}
+        \out{brier model  0.112}
+        \out{brier naive  0.152}
+      \end{term}
+    \end{column}
+  \end{columns}
+  \medskip
+  Brier score, lower is better. Overconfident above 80\% (0.97 predicted, 0.87 realized).
+\end{frame}
+
+\begin{frame}{Evaluation: cost}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{itemize}
+        \item Redeeming a credit: one RSA verification, \textbf{0.063 ms} on a laptop core.
+        \item One Gateway nanopayment per five credits.
+        \item Demo run: three feeds for \$0.01, no transaction per request.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \centering
+      \sprite[1.2cm]{lightning-off}\hspace{3mm}\sprite[1.2cm]{coin}\\[2mm]
+      \begin{term}[\linewidth]
+        \cmd{bun backtest/bench-redeem.ts}
+        \out{200 redemptions, 0.063 ms each}
+      \end{term}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Implementation}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{itemize}
+        \item Circle Gateway nanopayments, \texttt{x402-batching} 4.0
+        \item x402 v2: core, hono, fetch 2.31, \texttt{spendControls}
+        \item Arc testnet, USDC as gas
+        \item Gemini Prediction Markets API, Lukka klines
+        \item Added: the \texttt{blind-credit} scheme and its spec
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \begin{term}[\linewidth]
+        \cmd{bun add @circle-fin/x402-batching@4.0.0}
+        \cmd{bun add @x402/core@2.31.0 @x402/hono}
+        \cmd{bun run start}
+        \out{Odds Desk on http://localhost:4021}
+      \end{term}
+    \end{column}
+  \end{columns}
+  \medskip
+  Code: \texttt{github.com/alexandre-mrt/odds-desk}
+\end{frame}
+
+\begin{frame}{Future work}
+  \begin{itemize}
+    \item Propose \texttt{blind-credit} to the x402 specification.
+    \item Persistent mint keys with epochs and expiry.
+    \item Unlinkable batch purchase, for example a fresh Gateway deposit per batch.
+    \item Redemption through a relay to remove network metadata.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{References}
+  \small
+  \begin{itemize}
+    \item D. Chaum. Blind signatures for untraceable payments. \emph{CRYPTO}, 1983.
+    \item M. Bellare, C. Namprempre, D. Pointcheval, M. Semanko. The one-more-RSA-inversion problems and the security of Chaum's blind signature scheme. \emph{Journal of Cryptology}, 2003.
+    \item x402 Foundation. x402 protocol specification, version 2.
+    \item Circle. Gateway and nanopayments developer documentation.
+  \end{itemize}
+\end{frame}
+
+\end{document}
